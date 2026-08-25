@@ -267,6 +267,23 @@ export const seedTrips = [
                   "lat": 35.5127,
                   "lng": 23.5993
                 }
+              },
+              {
+                "id": "nea-chora-waterfront",
+                "title": "Nea Chora (Waterfront)",
+                "paragraphs": [
+                  "Seaside village vibe. Beach access, relaxed, good restaurants."
+                ],
+                "bullets": [
+                  "Beach walks",
+                  "Seafood tavernas",
+                  "Sunset views"
+                ],
+                "links": [],
+                "coordinates": {
+                  "lat": 35.5137,
+                  "lng": 24.0073
+                }
               }
             ]
           },
@@ -911,23 +928,6 @@ export const seedTrips = [
                 "coordinates": {
                   "lat": 37.9633,
                   "lng": 23.7239
-                }
-              },
-              {
-                "id": "nea-chora-waterfront",
-                "title": "Nea Chora (Waterfront)",
-                "paragraphs": [
-                  "Seaside village vibe. Beach access, relaxed, good restaurants."
-                ],
-                "bullets": [
-                  "Beach walks",
-                  "Seafood tavernas",
-                  "Sunset views"
-                ],
-                "links": [],
-                "coordinates": {
-                  "lat": 35.5137,
-                  "lng": 24.0073
                 }
               }
             ]
