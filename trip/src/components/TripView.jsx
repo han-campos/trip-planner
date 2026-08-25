@@ -62,7 +62,12 @@ export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
     return (
       <article className="map-shell" aria-label="Trip map">
         <div className="map-filter-card">
-          {modeSwitch}
+          <div className="map-filter-card__top">
+            <button type="button" className="button button--secondary map-back-btn" onClick={() => setMode('guide')}>
+              <Compass size={18} strokeWidth={iconStroke} /> Guide list
+            </button>
+            {modeSwitch}
+          </div>
           {filters}
         </div>
         <MapView
