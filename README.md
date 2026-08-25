@@ -7,14 +7,16 @@ React/Vite V1 lives in `trip/`. The original single-file `index.html` is preserv
 1. Open the hosted GitHub Pages URL.
 2. Enter the shared passcode.
 3. Use the bottom tabs:
-   - `Guide`: trip sections, day templates, and hamburger section menu.
-   - `Map`: Leaflet/OpenStreetMap pins for guide locations.
+   - `Guide`: trip sections, day templates, hamburger section menu, and an edit mode for adding/removing guide cards on the active trip.
+   - `Map`: Leaflet/OpenStreetMap pins for guide locations, with Google Maps deep links in popups.
    - `Phrases`: searchable Greek flashcards and practice mode.
-   - `Bookings`: shared booking cards with tap-to-edit fields.
+   - `Bookings`: shared booking cards with tap-to-edit fields, address autocomplete, and Google Maps links.
    - `Add Trip`: create a future trip from the browser without editing code.
 4. Use `Lock` in the header to clear the cached unlock on a shared device.
 
 The unlock is cached in localStorage so returning visitors skip the passcode. With no Supabase config, trips and bookings still work offline per device through localStorage.
+
+Guide cards with coordinates and bookings with either saved coordinates or an address include a free `📍 Open in Google Maps` link. Address suggestions use OpenStreetMap Nominatim with debounced, light client-side requests; no Google Places billing key is required.
 
 ## Develop and build
 
@@ -82,6 +84,14 @@ These policies match the brief's shared-passcode model: anyone who can open the 
 2. Open `Add Trip`.
 3. Fill basics, places with map coordinates, phrase cards, a simple day plan, and optional seed bookings.
 4. Save. The new trip appears in the header trip switcher and is stored through Supabase or localStorage, depending on configuration.
+
+## Edit the current trip guide
+
+1. Open `Guide` and tap `Edit Guide`.
+2. Use `+ Add` inside a guide group such as Dining Experiences.
+3. Enter a title, short description, optional bullet notes, and type a location.
+4. Pick an OpenStreetMap suggestion to save map coordinates, then save. The card is appended to that group and persisted through the storage adapter.
+5. Use `Remove` while edit mode is on to delete a guide card from the active trip.
 
 ## Future development
 

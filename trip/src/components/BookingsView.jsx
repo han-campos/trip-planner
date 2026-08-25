@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { googleMapsSearchUrl } from '../geo.js';
 import { makeId } from '../storage/storage.js';
+import LocationAutocomplete from './LocationAutocomplete.jsx';
 
 const fields = [
   ['checkin', 'Check-in / Date'],
@@ -9,7 +11,7 @@ const fields = [
   ['address', 'Address'],
 ];
 
-const emptyBooking = { name: '', checkin: '', checkout: '', confirmation: '', phone: '', address: '' };
+const emptyBooking = { name: '', checkin: '', checkout: '', confirmation: '', phone: '', address: '', lat: null, lng: null };
 
 export default function BookingsView({ trip, storage }) {
   const [bookings, setBookings] = useState([]);
@@ -45,7 +47,14 @@ export default function BookingsView({ trip, storage }) {
   async function addBooking(event) {
     event.preventDefault();
     if (!draft.name.trim()) return;
-    await saveBooking({ ...draft, id: makeId(), name: draft.name.trim() });
+    await saveBooking({
+      ...draft,
+      id: makeId(),
+      name: draft.name.trim(),
+      address: draft.address.trim(),
+      lat: finiteOrNull(draft.lat),
+      lng: finiteOrNull(draft.lng),
+    });
     setDraft(emptyBooking);
     setShowForm(false);
   }
@@ -76,7 +85,16 @@ export default function BookingsView({ trip, storage }) {
           <BookingInput label="Check-out (if applicable)" value={draft.checkout} placeholder="e.g., Thu, Sep 17 at 11:00 AM" onChange={(checkout) => setDraft({ ...draft, checkout })} />
           <BookingInput label="Confirmation #" value={draft.confirmation} placeholder="e.g., ABC123XYZ" onChange={(confirmation) => setDraft({ ...draft, confirmation })} />
           <BookingInput label="Phone Number" value={draft.phone} placeholder="e.g., +30 694 3639427" onChange={(phone) => setDraft({ ...draft, phone })} />
-          <BookingInput label="Address / Location" value={draft.address} placeholder="e.g., Nauárxou Apostóli 22" onChange={(address) => setDraft({ ...draft, address })} />
+          <LocationAutocomplete
+            label="Address / Location"
+            value={draft.address}
+            placeholder="Start typing an address, then pick a match"
+            onChange={(address) => setDraft({ ...draft, address, lat: null, lng: null })}
+            onSelect={(place) => setDraft({ ...draft, address: place.label, lat: place.lat, lng: place.lng })}
+          />
+          {draft.lat !== null && draft.lat !== undefined && draft.lng !== null && draft.lng !== undefined && Number.isFinite(Number(draft.lat)) && Number.isFinite(Number(draft.lng)) && (
+            <p className="location-picked">Saved map pin: {Number(draft.lat).toFixed(5)}, {Number(draft.lng).toFixed(5)}</p>
+          )}
           <div className="form-buttons">
             <button className="form-btn cancel" type="button" onClick={() => setShowForm(false)}>Cancel</button>
             <button className="form-btn save" type="submit" disabled={!draft.name.trim() || saving}>Save Booking</button>
@@ -85,33 +103,39 @@ export default function BookingsView({ trip, storage }) {
       )}
 
       <div className="booking-list">
-        {bookings.map((booking) => (
-          <article className="booking-card" key={booking.id}>
-            <div className="booking-card-header">
-              <h3>{booking.name}</h3>
-              <button className="delete-btn" type="button" onClick={() => deleteBooking(booking.id)}>Delete</button>
-            </div>
-            {fields.map(([field, label]) => (
-              <BookingField
-                key={field}
-                label={label}
-                value={booking[field] || ''}
-                editing={editing?.id === booking.id && editing?.field === field}
-                onEdit={() => setEditing({ id: booking.id, field })}
-                onCancel={() => setEditing(null)}
-                onSave={async (value) => {
-                  await saveBooking({ ...booking, [field]: value });
-                  setEditing(null);
-                }}
-              />
-            ))}
-          </article>
-        ))}
+        {bookings.map((booking) => {
+          const mapsUrl = bookingMapsUrl(booking);
+          return (
+            <article className="booking-card" key={booking.id}>
+              <div className="booking-card-header">
+                <h3>{booking.name}</h3>
+                <button className="delete-btn" type="button" onClick={() => deleteBooking(booking.id)}>Delete</button>
+              </div>
+              {fields.map(([field, label]) => (
+                <BookingField
+                  key={field}
+                  field={field}
+                  booking={booking}
+                  label={label}
+                  value={booking[field] || ''}
+                  editing={editing?.id === booking.id && editing?.field === field}
+                  onEdit={() => setEditing({ id: booking.id, field })}
+                  onCancel={() => setEditing(null)}
+                  onSave={async (patch) => {
+                    await saveBooking({ ...booking, ...patch });
+                    setEditing(null);
+                  }}
+                />
+              ))}
+              {mapsUrl && <a className="maps-link booking-maps-link" href={mapsUrl} target="_blank" rel="noreferrer">📍 Open in Google Maps</a>}
+            </article>
+          );
+        })}
       </div>
 
       <div className="tip-box">
         <strong>💡 How to Use</strong>
-        <p>Click on any field to edit it directly. Click "+ Add New Booking" to create new entries for tickets, activities, rentals, etc. All changes are saved automatically to your device.</p>
+        <p>Click on any field to edit it directly. Address fields offer OpenStreetMap suggestions and save map coordinates when you pick a match.</p>
       </div>
     </article>
   );
@@ -126,15 +150,52 @@ function BookingInput({ label, value, placeholder, onChange }) {
   );
 }
 
-function BookingField({ label, value, editing, onEdit, onCancel, onSave }) {
+function BookingField({ field, booking, label, value, editing, onEdit, onCancel, onSave }) {
   const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value, editing]);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  useEffect(() => {
+    setDraft(value);
+    setSelectedPlace(null);
+  }, [value, editing]);
 
   if (editing) {
+    if (field === 'address') {
+      return (
+        <div className="booking-field editing">
+          <div className="booking-label">{label}:</div>
+          <form className="address-edit-form" onSubmit={(event) => {
+            event.preventDefault();
+            onSave(addressPatch(booking, draft, selectedPlace));
+          }}>
+            <LocationAutocomplete
+              label=""
+              compact
+              autoFocus
+              value={draft}
+              placeholder="Start typing an address"
+              onChange={(address) => {
+                setDraft(address);
+                setSelectedPlace(null);
+              }}
+              onSelect={(place) => {
+                setDraft(place.label);
+                setSelectedPlace(place);
+              }}
+            />
+            {selectedPlace && <p className="location-picked">Saved map pin: {selectedPlace.lat.toFixed(5)}, {selectedPlace.lng.toFixed(5)}</p>}
+            <div className="address-edit-actions">
+              <button type="submit">Save</button>
+              <button type="button" onClick={onCancel}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
     return (
       <div className="booking-field editing">
         <div className="booking-label">{label}:</div>
-        <form onSubmit={(event) => { event.preventDefault(); onSave(draft); }}>
+        <form onSubmit={(event) => { event.preventDefault(); onSave({ [field]: draft }); }}>
           <input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} />
           <button type="submit">Save</button>
           <button type="button" onClick={onCancel}>Cancel</button>
@@ -149,4 +210,24 @@ function BookingField({ label, value, editing, onEdit, onCancel, onSave }) {
       <span className={`booking-value ${!value ? 'empty' : ''}`}>{value || 'Click to add'}</span>
     </button>
   );
+}
+
+function addressPatch(booking, address, selectedPlace) {
+  if (selectedPlace) {
+    return { address: selectedPlace.label, lat: selectedPlace.lat, lng: selectedPlace.lng };
+  }
+  if (address !== (booking.address || '')) {
+    return { address, lat: null, lng: null };
+  }
+  return { address };
+}
+
+function bookingMapsUrl(booking) {
+  return googleMapsSearchUrl({ lat: booking.lat, lng: booking.lng, query: booking.address });
+}
+
+function finiteOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }

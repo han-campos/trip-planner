@@ -73,6 +73,14 @@ export default function App() {
     chooseTrip(saved.id);
   }
 
+  async function updateTrip(trip) {
+    const saved = await storage.saveTrip(trip);
+    setTrips((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+    setActiveTripId(saved.id);
+    localStorage.setItem(activeTripStorageKey, saved.id);
+    return saved;
+  }
+
   if (!unlocked) {
     return <PasswordGate onUnlock={unlock} />;
   }
@@ -100,7 +108,7 @@ export default function App() {
       {storage.lastError && <p className="storage-warning">Supabase is unavailable; using localStorage fallback. {storage.lastError}</p>}
       {loading ? <main className="screen-message">Loading trip…</main> : (
         <main className="content-shell">
-          {activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} />}
+          {activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} onUpdateTrip={updateTrip} />}
           {activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
           {activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
           {activeTab === 'add-trip' && <AddTripWizard onSave={saveTrip} />}

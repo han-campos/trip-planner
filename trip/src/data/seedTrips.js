@@ -1332,7 +1332,9 @@ export const seedTrips = [
         "checkout": "Thu, Sep 17 at 11:00 AM",
         "confirmation": "",
         "phone": "+30 694 3639427",
-        "address": "Nauárxou Apostóli 22"
+        "address": "Nauárxou Apostóli 22",
+        "lat": null,
+        "lng": null
       },
       {
         "id": "2",
@@ -1341,7 +1343,9 @@ export const seedTrips = [
         "checkout": "Fri, Sep 13",
         "confirmation": "",
         "phone": "",
-        "address": ""
+        "address": "",
+        "lat": null,
+        "lng": null
       },
       {
         "id": "3",
@@ -1350,7 +1354,9 @@ export const seedTrips = [
         "checkout": "Fri, Sep 13",
         "confirmation": "",
         "phone": "",
-        "address": ""
+        "address": "",
+        "lat": null,
+        "lng": null
       }
     ]
   }

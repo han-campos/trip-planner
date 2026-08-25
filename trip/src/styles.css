@@ -174,7 +174,7 @@ a { color: var(--blue); text-decoration: none; font-weight: 700; }
   margin: 4px 0 16px;
   font-size: 21px;
 }
-.guide-group > h3, .map-list h3, .wizard-card h3 { color: #34495e; margin: 20px 0 10px; }
+.guide-group > h3, .guide-group-header h3, .map-list h3, .wizard-card h3 { color: #34495e; margin: 20px 0 10px; }
 .card-grid { display: grid; gap: 14px; }
 .place-card, .booking-card, .nested-card {
   background: var(--card-soft);
@@ -189,6 +189,39 @@ a { color: var(--blue); text-decoration: none; font-weight: 700; }
 .place-card ul { list-style: none; margin: 0; padding: 0; }
 .place-card li { padding: 6px 0 6px 20px; position: relative; }
 .place-card li::before { content: '→'; position: absolute; left: 0; color: var(--blue); }
+
+.guide-edit-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: white; border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px; margin: 0 0 14px; }
+.guide-edit-toolbar span { color: var(--muted); font-size: 13px; }
+.guide-edit-toolbar strong { color: var(--blue-dark); font-size: 13px; }
+.edit-toggle { border: 1px solid var(--blue); background: white; color: var(--blue-dark); border-radius: 999px; padding: 9px 14px; font-weight: 900; }
+.edit-toggle.active { background: var(--blue); color: white; }
+.guide-group-header, .place-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.guide-group-header h3 { margin-right: auto; }
+.place-card-header h4 { margin: 0; }
+.add-place-btn, .remove-place-btn { border: 0; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 900; }
+.add-place-btn { background: var(--success); color: white; }
+.remove-place-btn { background: #feeceb; color: var(--danger); }
+.place-card.editing { border-style: dashed; }
+.add-place-form { background: #f0f7ff; border: 2px solid var(--blue); border-radius: 12px; padding: 14px; margin: 8px 0 14px; }
+.add-place-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.add-place-heading h4 { margin: 0; color: var(--ink); }
+.add-place-heading span { border: 1px solid; border-radius: 999px; padding: 4px 9px; font-size: 12px; font-weight: 900; background: white; }
+.location-line { color: var(--muted); font-size: 13px; font-weight: 700; }
+.location-picked { margin: -4px 0 12px; color: var(--blue-dark); font-size: 13px; font-weight: 800; }
+.maps-link { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: #f0f7ff; color: var(--blue-dark); font-size: 13px; font-weight: 900; }
+.popup-maps-link { margin-top: 7px; }
+
+.autocomplete-field { position: relative; }
+.autocomplete-field.compact { margin-bottom: 0; }
+.autocomplete-wrap { position: relative; display: grid; gap: 6px; }
+.autocomplete-status, .autocomplete-error { font-size: 12px; font-weight: 700; }
+.autocomplete-status { color: var(--muted); }
+.autocomplete-error { color: var(--danger); }
+.autocomplete-list { position: absolute; z-index: 1200; top: calc(100% + 4px); left: 0; right: 0; display: grid; gap: 4px; max-height: 220px; overflow: auto; background: white; border: 1px solid var(--line); border-radius: 10px; padding: 6px; box-shadow: 0 12px 28px rgba(44, 62, 80, .18); }
+.autocomplete-list button { border: 0; background: white; border-radius: 8px; padding: 9px; text-align: left; color: var(--ink); }
+.autocomplete-list button:hover, .autocomplete-list button:focus { background: #f0f7ff; outline: 0; }
+.autocomplete-list strong { display: block; font-size: 13px; line-height: 1.35; }
+.autocomplete-list span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: capitalize; }
 
 .day-template { border: 2px solid var(--blue); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
 .day-template h3 { padding: 16px 16px 0; margin: 0; color: #34495e; }
@@ -281,6 +314,10 @@ a { color: var(--blue); text-decoration: none; font-weight: 700; }
 .booking-label { color: #34495e; font-size: 14px; font-weight: 900; }
 .booking-value { color: #333; }
 .booking-value.empty { color: #95a5a6; font-style: italic; }
+.booking-maps-link { margin-top: 10px; }
+.address-edit-form { grid-template-columns: 1fr !important; }
+.address-edit-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.address-edit-actions button { border: 1px solid var(--blue); border-radius: 7px; background: white; color: var(--blue-dark); font-weight: 800; padding: 7px 10px; }
 
 .wizard-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0; list-style: none; margin: 0 0 14px; }
 .wizard-steps li { background: white; border: 1px solid var(--line); border-radius: 999px; padding: 7px 8px; font-size: 12px; text-align: center; color: var(--muted); font-weight: 800; }

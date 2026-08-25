@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import { CATEGORIES } from '../places.js';
+import { googleMapsSearchUrl } from '../geo.js';
 
 // Map tab for the merged Guide/Map view. Receives already city-filtered,
 // categorized `places` and an `onJump` callback to switch to guide mode.
@@ -35,11 +36,14 @@ export default function MapView({ places, onJump }) {
       bounds.push([lat, lng]);
 
       const color = place.category.color;
-      const marker = L.marker([lat, lng], { icon: pinIcon(color) }).addTo(map);
+      const marker = L.marker([lat, lng], { icon: pinIcon(color), title: place.title }).addTo(map);
+      const mapsUrl = googleMapsSearchUrl({ lat, lng });
       marker.bindPopup(`
         <strong>${place.category.emoji} ${escapeHtml(place.title)}</strong>
         <p style="margin:4px 0;">${escapeHtml(place.snippet)}</p>
         <span style="font-size:12px;color:#7f8c8d;">${escapeHtml(place.category.label)} · ${escapeHtml(place.groupTitle)}</span>
+        <br/>
+        <a class="maps-link popup-maps-link" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">📍 Open in Google Maps</a>
         <br/>
         <button data-jump="${escapeHtml(place.id)}" style="margin-top:6px;cursor:pointer;border:0;background:#3498db;color:white;padding:6px 10px;border-radius:6px;font-weight:700;">View in guide →</button>
       `);

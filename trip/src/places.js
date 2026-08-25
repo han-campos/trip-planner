@@ -25,8 +25,8 @@ export function collectPlaces(trip) {
       area: section.area,
       category: categorizeGroup(group.title),
       groupTitle: group.title,
-      snippet: card.paragraphs[0] || card.bullets[0] || section.title,
-      coordinates: card.coordinates || { lat: 0, lng: 0 },
+      snippet: card.paragraphs?.[0] || card.bullets?.[0] || card.location || section.title,
+      coordinates: card.coordinates || null,
     })))
   );
 }

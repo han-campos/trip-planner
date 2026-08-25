@@ -14,6 +14,7 @@ someone who has the passcode opens a static URL and every feature works.
 - **React + Vite**, plain JavaScript (no TypeScript — lower contributor barrier).
 - **No CSS framework.** Hand-rolled CSS with custom properties in `trip/src/styles.css`.
 - **Leaflet + OpenStreetMap** tiles (free, no API key) for the map.
+- **Nominatim (OpenStreetMap)** for lightweight address/place autocomplete; no Google Places API key.
 - **Supabase (Postgres)** for shared data, with a **localStorage fallback** when
   keys aren't configured. Storage is behind one adapter: `trip/src/storage/storage.js`.
 - **Hosting**: static build output for GitHub Pages (`base: './'`). Build with
@@ -35,7 +36,7 @@ A **trip** is one structured object; the app renders any trip from data, not cod
 New trips are created either from `trip/src/data/seedTrips.js` or via the
 **Add Trip wizard** in the UI (a non-dev user can drive it).
 - Trips and bookings persist via the storage adapter (Supabase when configured,
-  localStorage otherwise), written to `trip-planner:v1:*` keys.
+  localStorage otherwise), written to `trip-planner:v1:*` keys. Guide edit mode saves the active trip object; booking address picks save additive `lat`/`lng` fields.
 - Config incl. passcode + Supabase keys + AI endpoint lives in `trip/src/config.js`,
   driven by Vite env vars (`VITE_TRIP_PASSCODE`, `VITE_SUPABASE_URL`,
   `VITE_SUPABASE_ANON_KEY`, `VITE_AI_ENDPOINT_URL`). See `trip/.env.example`.
@@ -45,15 +46,17 @@ New trips are created either from `trip/src/data/seedTrips.js` or via the
   Guide, Phrases, Bookings, Add Trip).
 - `components/TripView.jsx` — **merged Guide + Map** view with a Guide⇄Map slider
   and a per-city filter (All/Crete/Athens). Defaults to whole trip.
-- `components/GuideView.jsx` — renders guide sections + day templates from trip data.
+- `components/GuideView.jsx` — renders guide sections + day templates from trip data; edit mode adds/removes guide cards in the active trip.
+- `components/AddPlaceForm.jsx` — inline guide-card form with Nominatim location autocomplete.
 - `components/MapView.jsx` — Leaflet map; markers are color/emoji-coded by guide
-  category; click marker → popup → "View in guide" jumps to the card.
+  category; popup links jump to the guide and open Google Maps deep links.
 - `components/PhraseDeck.jsx` — searchable, category-filtered flashcard deck + tap-to-flip + practice mode.
-- `components/BookingsView.jsx` — shared bookings, tap-to-edit fields, add/delete.
+- `components/BookingsView.jsx` — shared bookings, tap-to-edit fields, add/delete, address autocomplete, Google Maps links.
 - `components/AddTripWizard.jsx` — user-side "create a new trip" form.
 - `components/PasswordGate.jsx` — shared-passcode gate; unlock cached in localStorage + Lock button.
 - `places.js` — shared helpers: category classifier (beaches/nature/towns/dining/
   history/activity), `collectPlaces`, city filtering, legend data.
+- `geo.js` — Nominatim autocomplete/geocoding seam plus free Google Maps deep-link helpers.
 - `storage/storage.js` — storage adapter (Supabase w/ localStorage fallback).
 - `ai/client.js` — **stub only**: calls a server endpoint `VITE_AI_ENDPOINT_URL`.
 

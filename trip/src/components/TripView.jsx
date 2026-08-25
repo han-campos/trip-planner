@@ -12,7 +12,7 @@ import {
 // Merged Guide/Map view. One page with a Guide ⇄ Map slider, a per-city filter,
 // and a multi-select category filter — both apply to guide + map. Defaults to
 // the whole trip.
-export default function TripView({ trip, onOpenTab }) {
+export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
   const [mode, setMode] = useState('guide'); // 'guide' | 'map'
   const [city, setCity] = useState('all');    // 'all' | 'crete' | 'athens' ...
   const [cats, setCats] = useState([]);       // [] = all categories
@@ -99,7 +99,7 @@ export default function TripView({ trip, onOpenTab }) {
       </div>
 
       {mode === 'guide' ? (
-        <GuideView trip={trip} sections={sections} onOpenMap={() => setMode('map')} onOpenTab={onOpenTab} />
+        <GuideView trip={trip} sections={sections} onOpenMap={() => setMode('map')} onOpenTab={onOpenTab} onUpdateTrip={onUpdateTrip} />
       ) : (
         <MapView places={places} onJump={jumpToGuide} />
       )}
