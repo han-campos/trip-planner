@@ -15,7 +15,13 @@ export default function MapView({ places, onJump }) {
       mapRef.current = null;
     }
 
-    const map = L.map(mapNode.current, { scrollWheelZoom: true, tap: true });
+    const map = L.map(mapNode.current, {
+      scrollWheelZoom: true,
+      tap: true,
+      // Keep popups clear of the top-left zoom controls so they don't overlap.
+      autoPanPaddingTopLeft: [56, 56],
+      autoPanPadding: [44, 44],
+    });
     mapRef.current = map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,

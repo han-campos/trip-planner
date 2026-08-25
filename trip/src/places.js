@@ -6,7 +6,7 @@ export const CATEGORIES = [
   { id: 'town',    color: '#e67e22', emoji: '🏘️', label: 'Towns & Neighborhoods', match: /town|market|village|neighbor|district|old town|plaka|psirri|kerameikos|monastiraki/i },
   { id: 'dining',  color: '#c0392b', emoji: '🍽️', label: 'Dining & Food',        match: /dining|food|taverna|restaurant|brunch|cafe|street food|meal|wine bar/i },
   { id: 'history', color: '#8e44ad', emoji: '🏛️', label: 'History & Culture',    match: /museum|historical|site|palace|ancient|agora|acropol|stadium|fortress|archae|temple|island|agora/i },
-  { id: 'activity', color: '#16a085', emoji: '🚤', label: 'Tours & Activities',  match: /tour|class|tasting|safari|photo|yoga|horse|climb|ferrata|cook|jeep|4x4|wine|raki|catamaran|excursion/i },
+  { id: 'activity', color: '#16a085', emoji: '🚤', label: 'Tours & Activities', match: /activit|tour|class|tasting|safari|photo|yoga|horse|climb|ferrata|cook|jeep|4x4|wine|raki|catamaran|excursion/i },
 ];
 
 export const DEFAULT_CATEGORY = { id: 'other', color: '#95a5a6', emoji: '📍', label: 'Other' };
@@ -37,6 +37,27 @@ export function filterPlacesByCity(places, city) {
 
 export function filterSectionsByCity(sections, city) {
   return city === 'all' ? sections : sections.filter((s) => s.area === city);
+}
+
+// Keep only the groups whose guide category is selected (empty = all).
+export function filterSectionsByCategory(sections, cats) {
+  if (!cats || cats.length === 0) return sections;
+  return sections.map((section) => ({
+    ...section,
+    groups: section.groups.filter((group) => cats.includes(categorizeGroup(group.title).id)),
+  })).filter((section) => section.groups.length > 0);
+}
+
+export function filterPlacesByCategory(places, cats) {
+  if (!cats || cats.length === 0) return places;
+  return places.filter((p) => cats.includes(p.category.id));
+}
+
+// Categories that actually appear in this trip (for building the filter chips).
+export function categoriesOfTrip(trip) {
+  const places = collectPlaces(trip);
+  const present = new Set(places.map((p) => p.category.id));
+  return CATEGORIES.filter((c) => present.has(c.id));
 }
 
 export function citiesOfTrip(trip) {

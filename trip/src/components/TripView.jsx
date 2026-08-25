@@ -1,24 +1,47 @@
 import { useMemo, useState } from 'react';
 import GuideView from './GuideView.jsx';
 import MapView from './MapView.jsx';
-import { collectPlaces, filterPlacesByCity, filterSectionsByCity, citiesOfTrip, cityLabel } from '../places.js';
+import {
+  citiesOfTrip, cityLabel,
+  categoriesOfTrip,
+  collectPlaces,
+  filterPlacesByCity, filterPlacesByCategory,
+  filterSectionsByCity, filterSectionsByCategory,
+} from '../places.js';
 
-// Merged Guide/Map view. One page with a Guide ⇄ Map slider and a city filter
-// that applies to both. Defaults to the whole trip.
+// Merged Guide/Map view. One page with a Guide ⇄ Map slider, a per-city filter,
+// and a multi-select category filter — both apply to guide + map. Defaults to
+// the whole trip.
 export default function TripView({ trip, onOpenTab }) {
   const [mode, setMode] = useState('guide'); // 'guide' | 'map'
   const [city, setCity] = useState('all');    // 'all' | 'crete' | 'athens' ...
+  const [cats, setCats] = useState([]);       // [] = all categories
 
   const cities = useMemo(() => citiesOfTrip(trip), [trip]);
+  const categories = useMemo(() => categoriesOfTrip(trip), [trip]);
   const allPlaces = useMemo(() => collectPlaces(trip), [trip]);
-  const sections = useMemo(() => filterSectionsByCity(trip.guideSections, city), [trip, city]);
-  const places = useMemo(() => filterPlacesByCity(allPlaces, city), [allPlaces, city]);
+
+  const sections = useMemo(() => {
+    let s = filterSectionsByCity(trip.guideSections, city);
+    s = filterSectionsByCategory(s, cats);
+    return s;
+  }, [trip, city, cats]);
+
+  const places = useMemo(() => {
+    let p = filterPlacesByCity(allPlaces, city);
+    p = filterPlacesByCategory(p, cats);
+    return p;
+  }, [allPlaces, city, cats]);
 
   function jumpToGuide(placeId) {
     setMode('guide');
     setTimeout(() => {
       document.getElementById(placeId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
+  }
+
+  function toggleCat(catId) {
+    setCats((current) => current.includes(catId) ? current.filter((c) => c !== catId) : [...current, catId]);
   }
 
   return (
@@ -55,6 +78,21 @@ export default function TripView({ trip, onOpenTab }) {
               onClick={() => setCity(c)}
             >
               {cityLabel(c)}
+            </button>
+          ))}
+        </div>
+
+        <div className="cat-filter" role="group" aria-label="Filter by category">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              className={cats.includes(cat.id) ? 'active' : ''}
+              onClick={() => toggleCat(cat.id)}
+              title={cat.label}
+            >
+              <i className="cat-dot" style={{ background: cat.color }} />
+              {cat.emoji} {cat.label}
             </button>
           ))}
         </div>
