@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { ArrowLeft, Check, MapPin, Plus, X } from 'lucide-react';
 import LocationAutocomplete from './LocationAutocomplete.jsx';
+import { iconStroke } from './uiIcons.jsx';
 
 const blankPlace = { title: '', description: '', notes: '', location: '', lat: '', lng: '' };
 const blankPhrase = { greek: '', pronunciation: '', meaning: '' };
@@ -15,7 +17,7 @@ export default function AddTripWizard({ onSave }) {
     subtitle: '',
     places: [{ ...blankPlace }],
     phrases: [{ ...blankPhrase }],
-    dayPlan: 'Morning — coffee and first walk\nLunch — local restaurant\nAfternoon — beach, museum, or neighborhood time\nEvening — dinner and slow walk',
+    dayPlan: '',
     bookings: [{ ...blankBooking }],
   });
 
@@ -27,29 +29,35 @@ export default function AddTripWizard({ onSave }) {
 
   async function submit(event) {
     event.preventDefault();
-    const cleaned = {
-      ...draft,
-      name: draft.name.trim(),
-      destination: draft.destination.trim(),
-      places: draft.places.filter((place) => place.title.trim()),
-      phrases: draft.phrases.filter((phrase) => phrase.greek.trim() && phrase.meaning.trim()),
-      bookings: draft.bookings.filter((booking) => booking.name.trim()),
-    };
-    if (!cleaned.name || !cleaned.destination || cleaned.places.length === 0) return;
+    if (!draft.name.trim() || !draft.destination.trim()) return;
     setSaving(true);
-    await onSave(cleaned);
-    setSaving(false);
+    try {
+      await onSave(draft);
+      setDraft({ name: '', destination: '', dates: '', subtitle: '', places: [{ ...blankPlace }], phrases: [{ ...blankPhrase }], dayPlan: '', bookings: [{ ...blankBooking }] });
+      setStep(0);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <article className="page wizard-page">
-      <header className="hero-card">
-        <h2>➕ Add New Trip</h2>
-        <p>Create a reusable trip from the user side. It becomes structured trip data, not a code edit.</p>
+      <header className="wizard-header">
+        <button className="icon-button" type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} aria-label="Back">
+          <ArrowLeft size={20} strokeWidth={iconStroke} />
+        </button>
+        <div>
+          <h1>New trip</h1>
+          <p>{step + 1} of {steps.length}</p>
+        </div>
+        <button className="icon-button" type="button" onClick={() => setStep(0)} aria-label="Reset wizard">
+          <X size={20} strokeWidth={iconStroke} />
+        </button>
       </header>
+      <div className="wizard-progress" aria-hidden="true"><span style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div>
 
       <ol className="wizard-steps">
-        {steps.map((label, index) => <li key={label} className={index === step ? 'active' : index < step ? 'done' : ''}>{label}</li>)}
+        {steps.map((label, index) => <li key={label} className={index === step ? 'active' : index < step ? 'done' : ''}>{index < step && <Check size={12} strokeWidth={iconStroke} aria-hidden="true" />}{label}</li>)}
       </ol>
 
       <form className="wizard-card" onSubmit={submit}>
@@ -61,11 +69,11 @@ export default function AddTripWizard({ onSave }) {
         {step === 5 && <Review draft={draft} />}
 
         <div className="wizard-actions">
-          <button type="button" className="ghost-button" disabled={step === 0} onClick={() => setStep((value) => value - 1)}>Back</button>
+          <button type="button" className="button button--secondary" disabled={step === 0} onClick={() => setStep((value) => value - 1)}>Back</button>
           {step < steps.length - 1 ? (
-            <button type="button" className="primary-button" onClick={() => setStep((value) => value + 1)}>Next</button>
+            <button type="button" className="button button--primary" onClick={() => setStep((value) => value + 1)}>Continue</button>
           ) : (
-            <button type="submit" className="primary-button" disabled={saving || !draft.name.trim() || !draft.destination.trim()}>Save Trip</button>
+            <button type="submit" className="button button--primary" disabled={saving || !draft.name.trim() || !draft.destination.trim()}>{saving ? 'Saving…' : 'Create trip'}</button>
           )}
         </div>
       </form>
@@ -76,7 +84,7 @@ export default function AddTripWizard({ onSave }) {
 function Basics({ draft, update }) {
   return (
     <section>
-      <h3>Trip basics</h3>
+      <h2>Trip details</h2>
       <Field label="Trip name" value={draft.name} onChange={(value) => update('name', value)} placeholder="Portugal 2027" />
       <Field label="Destination" value={draft.destination} onChange={(value) => update('destination', value)} placeholder="Lisbon & Porto" />
       <Field label="Dates" value={draft.dates} onChange={(value) => update('dates', value)} placeholder="May 1-9" />
@@ -88,7 +96,7 @@ function Basics({ draft, update }) {
 function Places({ draft, update }) {
   return (
     <section>
-      <h3>Places and map pins</h3>
+      <h2>Places and map pins</h2>
       <p className="help-text">Type a place or address and pick a match to add a map pin. If you skip the location, the place saves without a pin.</p>
       {draft.places.map((place, index) => (
         <div className="nested-card" key={index}>
@@ -105,7 +113,7 @@ function Places({ draft, update }) {
           {hasCoordinates(place) && <p className="location-picked">Saved map pin: {Number(place.lat).toFixed(5)}, {Number(place.lng).toFixed(5)}</p>}
         </div>
       ))}
-      <button type="button" className="ghost-button" onClick={() => update('places', [...draft.places, { ...blankPlace }])}>+ Add place</button>
+      <button type="button" className="button button--secondary inline-button" onClick={() => update('places', [...draft.places, { ...blankPlace }])}><Plus size={18} strokeWidth={iconStroke} />Add place</button>
     </section>
   );
 }
@@ -113,7 +121,7 @@ function Places({ draft, update }) {
 function Phrases({ draft, update }) {
   return (
     <section>
-      <h3>Phrase deck</h3>
+      <h2>Phrase deck</h2>
       {draft.phrases.map((phrase, index) => (
         <div className="nested-card compact" key={index}>
           <Field label="Greek" value={phrase.greek} onChange={(value) => updateList(update, draft, 'phrases', index, { ...phrase, greek: value })} />
@@ -121,7 +129,7 @@ function Phrases({ draft, update }) {
           <Field label="Meaning" value={phrase.meaning} onChange={(value) => updateList(update, draft, 'phrases', index, { ...phrase, meaning: value })} />
         </div>
       ))}
-      <button type="button" className="ghost-button" onClick={() => update('phrases', [...draft.phrases, { ...blankPhrase }])}>+ Add phrase</button>
+      <button type="button" className="button button--secondary inline-button" onClick={() => update('phrases', [...draft.phrases, { ...blankPhrase }])}><Plus size={18} strokeWidth={iconStroke} />Add phrase</button>
     </section>
   );
 }
@@ -129,7 +137,7 @@ function Phrases({ draft, update }) {
 function DayPlan({ draft, update }) {
   return (
     <section>
-      <h3>Simple day template</h3>
+      <h2>Simple day template</h2>
       <TextArea label="Plan, one line per slot" value={draft.dayPlan} onChange={(value) => update('dayPlan', value)} rows={8} />
     </section>
   );
@@ -138,7 +146,7 @@ function DayPlan({ draft, update }) {
 function Bookings({ draft, update }) {
   return (
     <section>
-      <h3>Seed bookings</h3>
+      <h2>Seed bookings</h2>
       {draft.bookings.map((booking, index) => (
         <div className="nested-card compact" key={index}>
           {Object.keys(blankBooking).map((key) => (
@@ -146,7 +154,7 @@ function Bookings({ draft, update }) {
           ))}
         </div>
       ))}
-      <button type="button" className="ghost-button" onClick={() => update('bookings', [...draft.bookings, { ...blankBooking }])}>+ Add seed booking</button>
+      <button type="button" className="button button--secondary inline-button" onClick={() => update('bookings', [...draft.bookings, { ...blankBooking }])}><Plus size={18} strokeWidth={iconStroke} />Add seed booking</button>
     </section>
   );
 }
@@ -154,7 +162,7 @@ function Bookings({ draft, update }) {
 function Review({ draft }) {
   return (
     <section>
-      <h3>Review</h3>
+      <h2>Review</h2>
       <dl className="review-list">
         <dt>Name</dt><dd>{draft.name || 'Missing'}</dd>
         <dt>Destination</dt><dd>{draft.destination || 'Missing'}</dd>

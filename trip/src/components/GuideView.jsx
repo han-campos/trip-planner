@@ -1,18 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Check, ChevronRight, Clock, ExternalLink, MapPin, Navigation, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import AddPlaceForm from './AddPlaceForm.jsx';
 import { googleMapsSearchUrl } from '../geo.js';
 import { categorizeGroup } from '../places.js';
 import { makeId } from '../storage/storage.js';
+import { CategoryIcon, categoryTone, iconStroke } from './uiIcons.jsx';
 
-export default function GuideView({ trip, sections, onOpenTab, onOpenMap, onUpdateTrip }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+export default function GuideView({ trip, sections, filters, modeSwitch, onUpdateTrip }) {
   const [editMode, setEditMode] = useState(false);
   const [addingTo, setAddingTo] = useState(null);
   const [saving, setSaving] = useState(false);
   const guideSections = sections || trip.guideSections;
   const canEdit = Boolean(onUpdateTrip);
+  const firstEditableTarget = useMemo(() => {
+    const section = trip.guideSections?.find((item) => item.groups?.length);
+    const group = section?.groups?.[0];
+    return section && group ? { sectionId: section.id, groupId: group.id } : null;
+  }, [trip.guideSections]);
 
   async function persistGuideSections(guideSectionsDraft) {
+    if (!onUpdateTrip) return;
     setSaving(true);
     try {
       await onUpdateTrip({ ...trip, guideSections: guideSectionsDraft });
@@ -22,90 +29,95 @@ export default function GuideView({ trip, sections, onOpenTab, onOpenMap, onUpda
   }
 
   async function addPlace(sectionId, groupId, draft) {
-    const cardId = uniquePlaceId(trip, draft.title);
-    const card = {
-      id: cardId,
-      title: draft.title,
-      paragraphs: draft.description ? [draft.description] : [],
-      bullets: draft.bullets.split('\n').map((line) => line.trim()).filter(Boolean),
-      links: [],
-      location: draft.location,
-      coordinates: draft.coordinates,
-    };
-
-    const nextGuideSections = trip.guideSections.map((section) => section.id !== sectionId ? section : {
-      ...section,
-      groups: section.groups.map((group) => group.id !== groupId ? group : {
-        ...group,
-        cards: [...group.cards, card],
-      }),
+    const nextSections = trip.guideSections.map((section) => {
+      if (section.id !== sectionId) return section;
+      return {
+        ...section,
+        groups: section.groups.map((group) => {
+          if (group.id !== groupId) return group;
+          const card = {
+            id: uniquePlaceId(trip, draft.title),
+            title: draft.title,
+            paragraphs: draft.description ? [draft.description] : [],
+            bullets: draft.bullets.split('\n').map((line) => line.trim()).filter(Boolean),
+            links: [],
+            location: draft.location || '',
+            coordinates: draft.coordinates || null,
+          };
+          return { ...group, cards: [...group.cards, card] };
+        }),
+      };
     });
-
-    await persistGuideSections(nextGuideSections);
+    await persistGuideSections(nextSections);
     setAddingTo(null);
-    window.setTimeout(() => document.getElementById(cardId)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
   }
 
   async function removePlace(sectionId, groupId, cardId) {
-    if (!window.confirm('Remove this place from the guide?')) return;
-    const nextGuideSections = trip.guideSections.map((section) => section.id !== sectionId ? section : {
-      ...section,
-      groups: section.groups.map((group) => group.id !== groupId ? group : {
-        ...group,
-        cards: group.cards.filter((card) => card.id !== cardId),
-      }),
+    const nextSections = trip.guideSections.map((section) => {
+      if (section.id !== sectionId) return section;
+      return {
+        ...section,
+        groups: section.groups.map((group) => group.id === groupId ? { ...group, cards: group.cards.filter((card) => card.id !== cardId) } : group),
+      };
     });
-    await persistGuideSections(nextGuideSections);
+    await persistGuideSections(nextSections);
+  }
+
+  function openQuickAdd() {
+    if (!firstEditableTarget) return;
+    setAddingTo(firstEditableTarget);
+    window.setTimeout(() => document.querySelector('.add-place-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
   }
 
   return (
     <article className="page guide-page">
-      <div className="sticky-section-menu">
-        <div className="section-menu-header">
-          <strong>{trip.name}</strong>
-          <button type="button" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? '✕ Close' : '☰ Menu'}</button>
-        </div>
-        {menuOpen && (
-          <div className="section-menu-list">
-            {trip.nav.map((item) => (
-              <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
-            ))}
-            {onOpenMap && (
-              <button type="button" onClick={() => { setMenuOpen(false); onOpenMap(); }}>🗺️ View Map</button>
-            )}
-            <button type="button" onClick={() => { setMenuOpen(false); onOpenTab('phrases'); }}>🗣️ Practice Phrases</button>
+      <header className="hero-card trip-hero">
+        <div className="hero-card__copy">
+          <div className="hero-card__title-row">
+            <h1>{trip.title}</h1>
+            <span className="active-chip">Active</span>
           </div>
+          <p>{trip.subtitle}</p>
+          <div className="hero-meta" aria-label="Trip details">
+            <span><MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />{summarizeAreas(trip)}</span>
+            {trip.dates && <span><Clock size={16} strokeWidth={iconStroke} aria-hidden="true" />{trip.dates}</span>}
+            <span><Users size={16} strokeWidth={iconStroke} aria-hidden="true" />Shared guide</span>
+          </div>
+        </div>
+        {canEdit && (
+          <button className={`hero-edit-button ${editMode ? 'active' : ''}`} type="button" onClick={() => setEditMode((active) => !active)} aria-label={editMode ? 'Finish editing guide' : 'Edit guide'}>
+            {editMode ? <Check size={18} strokeWidth={iconStroke} /> : <Pencil size={18} strokeWidth={iconStroke} />}
+          </button>
         )}
-      </div>
-
-      <header className="hero-card">
-        <h2>{trip.title}</h2>
-        <p>{trip.subtitle}</p>
       </header>
 
-      {canEdit && (
-        <div className="guide-edit-toolbar">
-          <button className={`edit-toggle ${editMode ? 'active' : ''}`} type="button" onClick={() => setEditMode((active) => !active)}>
-            {editMode ? 'Done Editing' : 'Edit Guide'}
-          </button>
-          <span>{editMode ? 'Add or remove guide cards for this trip.' : 'Turn on edit mode to add places and restaurants.'}</span>
-          {saving && <strong>Saving…</strong>}
+      {canEdit && editMode && (
+        <div className="editing-banner">
+          <strong>Editing</strong>
+          <span>Add or remove guide cards for this trip.</span>
+          {saving && <em>Saving…</em>}
         </div>
       )}
 
+      {filters}
+      {modeSwitch}
+
       {guideSections.map((section) => (
-        <section className="section" id={section.id} key={section.id}>
+        <section className="guide-section" id={section.id} key={section.id}>
           <h2>{section.title}</h2>
           {section.groups.map((group) => {
             const category = categorizeGroup(group.title);
             const isAdding = addingTo?.sectionId === section.id && addingTo?.groupId === group.id;
             return (
               <div className="guide-group" key={group.id}>
-                <div className="guide-group-header">
+                <div className="section-header">
+                  <span className={`section-header__icon category-tile category-tile--${categoryTone(category)}`}><CategoryIcon category={category} size={16} /></span>
                   <h3 id={group.id}>{group.title}</h3>
+                  <span className="section-count">{group.cards.length}</span>
                   {editMode && (
-                    <button className="add-place-btn" type="button" onClick={() => setAddingTo(isAdding ? null : { sectionId: section.id, groupId: group.id })}>
-                      {isAdding ? 'Close' : '+ Add'}
+                    <button className="mini-add-button" type="button" onClick={() => setAddingTo(isAdding ? null : { sectionId: section.id, groupId: group.id })}>
+                      <Plus size={16} strokeWidth={iconStroke} aria-hidden="true" />
+                      {isAdding ? 'Close' : 'Add'}
                     </button>
                   )}
                 </div>
@@ -123,6 +135,7 @@ export default function GuideView({ trip, sections, onOpenTab, onOpenMap, onUpda
                     <PlaceCard
                       key={card.id}
                       card={card}
+                      category={category}
                       editMode={editMode}
                       onDelete={() => removePlace(section.id, group.id, card.id)}
                     />
@@ -134,52 +147,80 @@ export default function GuideView({ trip, sections, onOpenTab, onOpenMap, onUpda
         </section>
       ))}
 
-      <section className="section" id="daily-templates">
+      <section className="guide-section" id="daily-templates">
         <h2>{trip.dayTemplates.title}</h2>
-        {trip.dayTemplates.templates.map((template) => (
-          <div className="day-template" id={template.id} key={template.id}>
-            <h3>{template.title}</h3>
-            <div className="day-header">{template.header}</div>
-            {template.slots.map((slot) => (
-              <div className="time-slot" key={`${template.id}-${slot.time}`}>
-                <div className="time">{slot.time}</div>
-                <div className="activity">{slot.activity}</div>
-                {slot.detail && <div className="activity-detail">{slot.detail}</div>}
-              </div>
-            ))}
-          </div>
-        ))}
+        <div className="day-template-grid">
+          {trip.dayTemplates.templates.map((template) => (
+            <div className="day-template" id={template.id} key={template.id}>
+              <h3>{template.title}</h3>
+              <div className="day-header">{template.header}</div>
+              {template.slots.map((slot) => (
+                <div className="time-slot" key={`${template.id}-${slot.time}`}>
+                  <div className="time">{slot.time}</div>
+                  <div className="activity">{slot.activity}</div>
+                  {slot.detail && <div className="activity-detail">{slot.detail}</div>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
         <div className="tip-box">
           <strong>{trip.dayTemplates.tip.title}</strong>
           <p>{trip.dayTemplates.tip.body}</p>
         </div>
       </section>
+
+      {canEdit && editMode && (
+        <button className="add-place-fab" type="button" onClick={openQuickAdd} aria-label="Add place">
+          <Plus size={24} strokeWidth={iconStroke} />
+        </button>
+      )}
     </article>
   );
 }
 
-export function PlaceCard({ card, editMode = false, onDelete }) {
+export function PlaceCard({ card, category, editMode = false, onDelete }) {
   const mapsUrl = googleMapsSearchUrl(card.coordinates || {});
   const paragraphs = card.paragraphs || [];
   const bullets = card.bullets || [];
 
   return (
     <article className={`place-card ${editMode ? 'editing' : ''}`} id={card.id}>
-      <div className="place-card-header">
-        <h4>{card.title}</h4>
-        {editMode && <button className="remove-place-btn" type="button" onClick={onDelete}>Remove</button>}
+      <div className={`category-tile category-tile--${categoryTone(category)}`} aria-hidden="true">
+        <CategoryIcon category={category} size={20} />
       </div>
-      {card.location && <p className="location-line">📍 {card.location}</p>}
-      {paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-      {card.links?.map((link) => <p key={link.href}><a href={link.href} target="_blank" rel="noreferrer">{link.label}</a></p>)}
-      {mapsUrl && <p><a className="maps-link" href={mapsUrl} target="_blank" rel="noreferrer">📍 Open in Google Maps</a></p>}
-      {bullets.length > 0 && (
-        <ul>
-          {bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
-        </ul>
-      )}
+      <div className="place-card__body">
+        <div className="place-card__header">
+          <h4>{card.title}</h4>
+          {editMode ? (
+            <button className="icon-button danger" type="button" onClick={onDelete} aria-label={`Remove ${card.title}`}>
+              <Trash2 size={18} strokeWidth={iconStroke} />
+            </button>
+          ) : (
+            <ChevronRight size={18} strokeWidth={iconStroke} className="place-card__chevron" aria-hidden="true" />
+          )}
+        </div>
+        {card.location && <p className="location-line"><MapPin size={14} strokeWidth={iconStroke} aria-hidden="true" />{card.location}</p>}
+        {paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        {bullets.length > 0 && (
+          <ul>
+            {bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+          </ul>
+        )}
+        <div className="place-card__links">
+          {card.links?.map((link) => <a className="maps-link" key={link.href} href={link.href} target="_blank" rel="noreferrer"><ExternalLink size={14} strokeWidth={iconStroke} />{link.label}</a>)}
+          {mapsUrl && <a className="maps-link" href={mapsUrl} target="_blank" rel="noreferrer"><Navigation size={14} strokeWidth={iconStroke} />Open in Google Maps</a>}
+        </div>
+      </div>
     </article>
   );
+}
+
+function summarizeAreas(trip) {
+  const areas = [...new Set((trip.guideSections || []).map((section) => section.area).filter(Boolean))];
+  if (areas.includes('crete') && areas.includes('athens')) return 'Crete & Athens';
+  if (areas.length === 1) return areas[0][0].toUpperCase() + areas[0].slice(1);
+  return 'Trip places';
 }
 
 function uniquePlaceId(trip, title) {

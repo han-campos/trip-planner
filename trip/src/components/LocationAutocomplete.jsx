@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { autocomplete } from '../geo.js';
+import { iconStroke } from './uiIcons.jsx';
 
 export default function LocationAutocomplete({
   label = 'Location',
@@ -57,13 +59,16 @@ export default function LocationAutocomplete({
     <label className={`form-group autocomplete-field ${compact ? 'compact' : ''}`}>
       {label && <span>{label}</span>}
       <div className="autocomplete-wrap">
-        <input
-          autoFocus={autoFocus}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => { setAcceptedValue(''); onChange(event.target.value); }}
-          autoComplete="off"
-        />
+        <span className="search-field">
+          <MapPin size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          <input
+            autoFocus={autoFocus}
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => { setAcceptedValue(''); onChange(event.target.value); }}
+            autoComplete="off"
+          />
+        </span>
         {status === 'searching' && <small className="autocomplete-status">Searching OpenStreetMap…</small>}
         {status === 'empty' && <small className="autocomplete-status">No matches yet. Keep typing or save as entered.</small>}
         {error && <small className="autocomplete-error">{error}</small>}

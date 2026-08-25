@@ -1,13 +1,17 @@
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ChevronRight, LocateFixed, Minus, Navigation, Plus } from 'lucide-react';
 import { CATEGORIES } from '../places.js';
 import { googleMapsSearchUrl } from '../geo.js';
+import { categoryMeta, categoryTone, iconStroke } from './uiIcons.jsx';
 
 // Map tab for the merged Guide/Map view. Receives already city-filtered,
 // categorized `places` and an `onJump` callback to switch to guide mode.
-export default function MapView({ places, onJump }) {
+export default function MapView({ places, categories = CATEGORIES, activeCategories = [], onToggleCategory, onJump }) {
   const mapNode = useRef(null);
   const mapRef = useRef(null);
+  const boundsRef = useRef(null);
 
   useEffect(() => {
     if (!mapNode.current) return undefined;
@@ -19,7 +23,7 @@ export default function MapView({ places, onJump }) {
     const map = L.map(mapNode.current, {
       scrollWheelZoom: true,
       tap: true,
-      // Keep popups clear of the top-left zoom controls so they don't overlap.
+      zoomControl: false,
       autoPanPaddingTopLeft: [56, 56],
       autoPanPadding: [44, 44],
     });
@@ -35,22 +39,29 @@ export default function MapView({ places, onJump }) {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       bounds.push([lat, lng]);
 
-      const color = place.category.color;
-      const marker = L.marker([lat, lng], { icon: pinIcon(color), title: place.title }).addTo(map);
+      const marker = L.marker([lat, lng], { icon: pinIcon(place.category), title: place.title }).addTo(map);
       const mapsUrl = googleMapsSearchUrl({ lat, lng });
       marker.bindPopup(`
-        <strong>${place.category.emoji} ${escapeHtml(place.title)}</strong>
-        <p style="margin:4px 0;">${escapeHtml(place.snippet)}</p>
-        <span style="font-size:12px;color:#7f8c8d;">${escapeHtml(place.category.label)} · ${escapeHtml(place.groupTitle)}</span>
-        <br/>
-        <a class="maps-link popup-maps-link" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">📍 Open in Google Maps</a>
-        <br/>
-        <button data-jump="${escapeHtml(place.id)}" style="margin-top:6px;cursor:pointer;border:0;background:#3498db;color:white;padding:6px 10px;border-radius:6px;font-weight:700;">View in guide →</button>
+        <div class="map-popup">
+          <strong>${escapeHtml(place.title)}</strong>
+          <p>${escapeHtml(place.snippet)}</p>
+          <span>${escapeHtml(place.category.label)} · ${escapeHtml(place.groupTitle)}</span>
+          <div class="map-popup__actions">
+            <a class="popup-action popup-action--primary" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">${iconMarkup(Navigation, 14)} Directions</a>
+            <button class="popup-action" type="button" data-jump="${escapeHtml(place.id)}">View in guide ${iconMarkup(ChevronRight, 14)}</button>
+          </div>
+        </div>
       `);
     });
 
-    if (bounds.length > 0) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
-    else map.setView([37.9838, 23.7275], 6);
+    if (bounds.length > 0) {
+      const nextBounds = L.latLngBounds(bounds);
+      boundsRef.current = nextBounds;
+      map.fitBounds(nextBounds, { padding: [32, 32], maxZoom: 10 });
+    } else {
+      boundsRef.current = null;
+      map.setView([37.9838, 23.7275], 6);
+    }
 
     map.on('popupopen', (event) => {
       const btn = event.popup.getElement()?.querySelector('[data-jump]');
@@ -63,32 +74,56 @@ export default function MapView({ places, onJump }) {
     };
   }, [places, onJump]);
 
+  function recenter() {
+    const map = mapRef.current;
+    if (!map) return;
+    if (boundsRef.current) map.fitBounds(boundsRef.current, { padding: [32, 32], maxZoom: 10 });
+    else map.setView([37.9838, 23.7275], 6);
+  }
+
   return (
     <div className="map-page">
       <div className="leaflet-panel" ref={mapNode} aria-label="Trip locations map" />
-      <Legend />
+      <div className="map-controls" aria-label="Map controls">
+        <button type="button" onClick={recenter} aria-label="Recenter map"><LocateFixed size={20} strokeWidth={iconStroke} /></button>
+        <button type="button" onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={20} strokeWidth={iconStroke} /></button>
+        <button type="button" onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={20} strokeWidth={iconStroke} /></button>
+      </div>
+      <Legend categories={categories} activeCategories={activeCategories} onToggleCategory={onToggleCategory} />
     </div>
   );
 }
 
-function Legend() {
+function Legend({ categories, activeCategories, onToggleCategory }) {
   return (
-    <div className="map-legend">
-      {CATEGORIES.map((cat) => (
-        <span key={cat.id}><i style={{ background: cat.color }} />{cat.label}</span>
-      ))}
+    <div className="map-legend" aria-label="Map legend">
+      {categories.map((cat) => {
+        const active = activeCategories.includes(cat.id);
+        return (
+          <button key={cat.id} type="button" className={active ? 'active' : ''} onClick={() => onToggleCategory?.(cat.id)}>
+            <i className={`legend-dot legend-dot--${categoryTone(cat)}`} aria-hidden="true" />
+            {cat.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function pinIcon(color) {
+function pinIcon(category) {
+  const tone = categoryTone(category);
+  const { Icon } = categoryMeta(category);
   return L.divIcon({
     className: 'trip-pin',
-    html: `<span style="--pin-color:${color}"></span>`,
-    iconSize: [24, 32],
-    iconAnchor: [12, 32],
-    popupAnchor: [0, -30],
+    html: `<span class="map-marker map-marker--${tone}">${iconMarkup(Icon, 16)}</span>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18],
   });
+}
+
+function iconMarkup(Icon, size) {
+  return renderToStaticMarkup(<Icon aria-hidden="true" size={size} strokeWidth={iconStroke} />);
 }
 
 function escapeHtml(value) {

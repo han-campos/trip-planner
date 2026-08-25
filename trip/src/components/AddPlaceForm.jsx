@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import { geocode } from '../geo.js';
 import LocationAutocomplete from './LocationAutocomplete.jsx';
+import { CategoryIcon, categoryTone, iconStroke } from './uiIcons.jsx';
 
 export default function AddPlaceForm({ groupTitle, category, saving, onSave, onCancel }) {
   const [title, setTitle] = useState('');
@@ -33,8 +35,13 @@ export default function AddPlaceForm({ groupTitle, category, saving, onSave, onC
   return (
     <form className="add-place-form" onSubmit={submit}>
       <div className="add-place-heading">
-        <h4>Add to {groupTitle}</h4>
-        <span style={{ borderColor: category.color, color: category.color }}>{category.emoji} {category.label}</span>
+        <div>
+          <h4>Add to {groupTitle}</h4>
+          <span className={`category-chip category-chip--${categoryTone(category)}`}><CategoryIcon category={category} size={16} />{category.label}</span>
+        </div>
+        <button className="icon-button" type="button" onClick={onCancel} aria-label="Close add place">
+          <X size={18} strokeWidth={iconStroke} />
+        </button>
       </div>
 
       <label className="form-group">
@@ -69,8 +76,8 @@ export default function AddPlaceForm({ groupTitle, category, saving, onSave, onC
       {lookupStatus === 'searching' && <p className="location-picked">Checking OpenStreetMap before saving…</p>}
 
       <div className="form-buttons">
-        <button className="form-btn cancel" type="button" onClick={onCancel} disabled={saving}>Cancel</button>
-        <button className="form-btn save" type="submit" disabled={!title.trim() || saving}>{saving ? 'Saving…' : 'Save Place'}</button>
+        <button className="button button--secondary" type="button" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="button button--primary" type="submit" disabled={!title.trim() || saving}>{saving ? 'Saving…' : 'Save place'}</button>
       </div>
     </form>
   );

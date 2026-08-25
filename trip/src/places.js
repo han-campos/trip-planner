@@ -1,15 +1,15 @@
 // Shared place + category helpers for the merged Guide/Map view.
 
 export const CATEGORIES = [
-  { id: 'water',   color: '#3498db', emoji: '🌊', label: 'Beaches & Water',     match: /beach|water|lagoon|boat|snorkel|scuba|swim|windsurf|paddle|kayak|dive/i },
-  { id: 'nature',  color: '#27ae60', emoji: '🌲', label: 'Hiking & Nature',      match: /hiking|nature|gorge|mountain|garden|trail|river|botanical/i },
-  { id: 'town',    color: '#e67e22', emoji: '🏘️', label: 'Towns & Neighborhoods', match: /town|market|village|neighbor|district|old town|plaka|psirri|kerameikos|monastiraki/i },
-  { id: 'dining',  color: '#c0392b', emoji: '🍽️', label: 'Dining & Food',        match: /dining|food|taverna|restaurant|brunch|cafe|street food|meal|wine bar/i },
-  { id: 'history', color: '#8e44ad', emoji: '🏛️', label: 'History & Culture',    match: /museum|historical|site|palace|ancient|agora|acropol|stadium|fortress|archae|temple|island|agora/i },
-  { id: 'activity', color: '#16a085', emoji: '🚤', label: 'Tours & Activities', match: /activit|tour|class|tasting|safari|photo|yoga|horse|climb|ferrata|cook|jeep|4x4|wine|raki|catamaran|excursion/i },
+  { id: 'water', colorVar: '--color-cat-beach', label: 'Beaches', match: /beach|water|lagoon|boat|snorkel|scuba|swim|windsurf|paddle|kayak|dive/i },
+  { id: 'nature', colorVar: '--color-cat-hiking', label: 'Hiking', match: /hiking|nature|gorge|mountain|garden|trail|river|botanical/i },
+  { id: 'town', colorVar: '--color-cat-town', label: 'Towns', match: /town|market|village|neighbor|district|old town|plaka|psirri|kerameikos|monastiraki/i },
+  { id: 'dining', colorVar: '--color-cat-dining', label: 'Dining', match: /dining|food|taverna|restaurant|brunch|cafe|street food|meal|wine bar/i },
+  { id: 'history', colorVar: '--color-cat-history', label: 'History', match: /museum|historical|site|palace|ancient|agora|acropol|stadium|fortress|archae|temple|island|agora/i },
+  { id: 'activity', colorVar: '--color-cat-tour', label: 'Tours', match: /activit|tour|class|tasting|safari|photo|yoga|horse|climb|ferrata|cook|jeep|4x4|wine|raki|catamaran|excursion/i },
 ];
 
-export const DEFAULT_CATEGORY = { id: 'other', color: '#95a5a6', emoji: '📍', label: 'Other' };
+export const DEFAULT_CATEGORY = { id: 'other', colorVar: '--color-cat-history', label: 'Other' };
 
 export function categorizeGroup(title) {
   return CATEGORIES.find((c) => c.match.test(title || '')) || DEFAULT_CATEGORY;
@@ -76,8 +76,8 @@ export function citiesOfTrip(trip) {
 }
 
 export function cityLabel(city) {
-  if (city === 'all') return '🗺️ All';
-  if (city === 'crete') return '🇬🇷 Crete';
-  if (city === 'athens') return '🏛️ Athens';
+  if (city === 'all') return 'All';
+  if (city === 'crete') return 'Crete';
+  if (city === 'athens') return 'Athens';
   return city;
 }

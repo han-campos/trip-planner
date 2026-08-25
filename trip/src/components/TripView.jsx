@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+import { Compass, Map as MapIcon } from 'lucide-react';
 import GuideView from './GuideView.jsx';
 import MapView from './MapView.jsx';
+import { CategoryIcon, iconStroke } from './uiIcons.jsx';
 import {
   citiesOfTrip, cityLabel,
   categoriesOfTrip,
@@ -44,64 +46,108 @@ export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
     setCats((current) => current.includes(catId) ? current.filter((c) => c !== catId) : [...current, catId]);
   }
 
+  const modeSwitch = <ModeSwitch mode={mode} onMode={setMode} />;
+  const filters = (
+    <FilterToolbar
+      cities={cities}
+      city={city}
+      onCity={setCity}
+      categories={categories}
+      activeCategories={cats}
+      onToggleCategory={toggleCat}
+    />
+  );
+
+  if (mode === 'map') {
+    return (
+      <article className="map-shell" aria-label="Trip map">
+        <div className="map-filter-card">
+          {modeSwitch}
+          {filters}
+        </div>
+        <MapView
+          places={places}
+          categories={categories}
+          activeCategories={cats}
+          onToggleCategory={toggleCat}
+          onJump={jumpToGuide}
+        />
+      </article>
+    );
+  }
+
   return (
-    <article className="page">
-      <div className="view-toolbar">
-        <div className="mode-switch" role="tablist" aria-label="Guide or Map view">
+    <GuideView
+      trip={trip}
+      sections={sections}
+      filters={filters}
+      modeSwitch={modeSwitch}
+      onOpenTab={onOpenTab}
+      onUpdateTrip={onUpdateTrip}
+    />
+  );
+}
+
+function ModeSwitch({ mode, onMode }) {
+  return (
+    <div className="mode-switch" role="tablist" aria-label="Guide or Map view">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === 'guide'}
+        className={mode === 'guide' ? 'active' : ''}
+        onClick={() => onMode('guide')}
+      >
+        <Compass size={18} strokeWidth={iconStroke} aria-hidden="true" />
+        Guide
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === 'map'}
+        className={mode === 'map' ? 'active' : ''}
+        onClick={() => onMode('map')}
+      >
+        <MapIcon size={18} strokeWidth={iconStroke} aria-hidden="true" />
+        Map
+      </button>
+      <span className={`mode-switch-thumb ${mode}`} aria-hidden="true" />
+    </div>
+  );
+}
+
+function FilterToolbar({ cities, city, onCity, categories, activeCategories, onToggleCategory }) {
+  return (
+    <div className="filter-toolbar">
+      <div className="city-filter" role="tablist" aria-label="Filter by city">
+        {cities.map((c) => (
           <button
+            key={c}
             type="button"
             role="tab"
-            aria-selected={mode === 'guide'}
-            className={mode === 'guide' ? 'active' : ''}
-            onClick={() => setMode('guide')}
+            aria-selected={city === c}
+            className={city === c ? 'active' : ''}
+            onClick={() => onCity(c)}
           >
-            📖 Guide
+            {cityLabel(c)}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'map'}
-            className={mode === 'map' ? 'active' : ''}
-            onClick={() => setMode('map')}
-          >
-            🗺️ Map
-          </button>
-          <span className={`mode-switch-thumb ${mode}`} aria-hidden="true" />
-        </div>
-
-        <div className="city-filter" role="group" aria-label="Filter by city">
-          {cities.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={city === c ? 'active' : ''}
-              onClick={() => setCity(c)}
-            >
-              {cityLabel(c)}
-            </button>
-          ))}
-        </div>
-
-        <div className="cat-filter" role="group" aria-label="Filter by category">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              className={cats.includes(cat.id) ? 'active' : ''}
-              onClick={() => toggleCat(cat.id)}
-              title={cat.label}
-            >
-              {cat.emoji} {cat.label}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
 
-      {mode === 'guide' ? (
-        <GuideView trip={trip} sections={sections} onOpenMap={() => setMode('map')} onOpenTab={onOpenTab} onUpdateTrip={onUpdateTrip} />
-      ) : (
-        <MapView places={places} onJump={jumpToGuide} />
-      )}
-    </article>
+      <div className="cat-filter" role="group" aria-label="Filter by category">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className={activeCategories.includes(cat.id) ? 'active' : ''}
+            onClick={() => onToggleCategory(cat.id)}
+            title={cat.label}
+          >
+            <CategoryIcon category={cat} size={16} />
+            {cat.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

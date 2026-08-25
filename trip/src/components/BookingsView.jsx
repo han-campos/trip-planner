@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { CalendarDays, ExternalLink, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { googleMapsSearchUrl } from '../geo.js';
 import { makeId } from '../storage/storage.js';
 import LocationAutocomplete from './LocationAutocomplete.jsx';
+import { bookingIconFor, iconStroke } from './uiIcons.jsx';
 
 const fields = [
   ['checkin', 'Check-in / Date'],
@@ -21,13 +23,11 @@ export default function BookingsView({ trip, storage }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-    storage.listBookings(trip.id, trip.bookings || []).then((loaded) => {
-      if (alive) setBookings(loaded);
+    let mounted = true;
+    storage.listBookings(trip.id, trip.bookings || []).then((items) => {
+      if (mounted) setBookings(items);
     });
-    return () => {
-      alive = false;
-    };
+    return () => { mounted = false; };
   }, [storage, trip.id, trip.bookings]);
 
   async function reload() {
@@ -36,51 +36,50 @@ export default function BookingsView({ trip, storage }) {
 
   async function saveBooking(booking) {
     setSaving(true);
-    const saved = await storage.upsertBooking(trip.id, booking);
-    setBookings((current) => current.some((item) => item.id === saved.id)
-      ? current.map((item) => (item.id === saved.id ? saved : item))
-      : [...current, saved]);
-    setSaving(false);
-    return saved;
+    try {
+      const saved = await storage.saveBooking(trip.id, booking);
+      setBookings((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addBooking(event) {
     event.preventDefault();
     if (!draft.name.trim()) return;
-    await saveBooking({
-      ...draft,
-      id: makeId(),
-      name: draft.name.trim(),
-      address: draft.address.trim(),
-      lat: finiteOrNull(draft.lat),
-      lng: finiteOrNull(draft.lng),
-    });
+    const saved = await storage.saveBooking(trip.id, { ...draft, id: makeId() });
+    setBookings((current) => [saved, ...current]);
     setDraft(emptyBooking);
     setShowForm(false);
   }
 
   async function deleteBooking(bookingId) {
-    if (!window.confirm('Delete this booking?')) return;
     await storage.deleteBooking(trip.id, bookingId);
     setBookings((current) => current.filter((booking) => booking.id !== bookingId));
   }
 
   return (
     <article className="page bookings-page">
-      <header className="hero-card">
-        <h2>📋 Trip Bookings</h2>
+      <header className="hero-card simple-hero">
+        <h1>Trip Bookings</h1>
         <p>{storage.mode === 'supabase' ? 'Shared Supabase bookings for everyone with the passcode.' : 'Offline-ready localStorage bookings on this device.'}</p>
       </header>
 
       <div className="booking-toolbar">
-        <button className="add-booking-btn" type="button" onClick={() => setShowForm((open) => !open)}>+ Add New Booking</button>
-        <button className="ghost-button" type="button" onClick={reload}>Refresh</button>
+        <button className="button button--primary" type="button" onClick={() => setShowForm((open) => !open)}>
+          <Plus size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          Add booking
+        </button>
+        <button className="button button--secondary" type="button" onClick={reload}>
+          <RefreshCw size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          Refresh
+        </button>
       </div>
 
       {showForm && (
         <form className="add-booking-form show" onSubmit={addBooking}>
-          <h3>Create New Booking</h3>
-          <BookingInput label="Booking Name" value={draft.name} placeholder="e.g., Acropolis Tickets, Catamaran, etc." onChange={(name) => setDraft({ ...draft, name })} />
+          <h3>Create new booking</h3>
+          <BookingInput label="Booking Name" value={draft.name} placeholder="e.g., Acropolis tickets, catamaran, hotel" onChange={(name) => setDraft({ ...draft, name })} />
           <BookingInput label="Check-in / Date" value={draft.checkin} placeholder="e.g., Sun, Sep 13 at 3:00 PM" onChange={(checkin) => setDraft({ ...draft, checkin })} />
           <BookingInput label="Check-out (if applicable)" value={draft.checkout} placeholder="e.g., Thu, Sep 17 at 11:00 AM" onChange={(checkout) => setDraft({ ...draft, checkout })} />
           <BookingInput label="Confirmation #" value={draft.confirmation} placeholder="e.g., ABC123XYZ" onChange={(confirmation) => setDraft({ ...draft, confirmation })} />
@@ -96,8 +95,8 @@ export default function BookingsView({ trip, storage }) {
             <p className="location-picked">Saved map pin: {Number(draft.lat).toFixed(5)}, {Number(draft.lng).toFixed(5)}</p>
           )}
           <div className="form-buttons">
-            <button className="form-btn cancel" type="button" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="form-btn save" type="submit" disabled={!draft.name.trim() || saving}>Save Booking</button>
+            <button className="button button--secondary" type="button" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="button button--primary" type="submit" disabled={!draft.name.trim() || saving}>Save booking</button>
           </div>
         </form>
       )}
@@ -105,36 +104,45 @@ export default function BookingsView({ trip, storage }) {
       <div className="booking-list">
         {bookings.map((booking) => {
           const mapsUrl = bookingMapsUrl(booking);
+          const Icon = bookingIconFor(booking.name);
           return (
             <article className="booking-card" key={booking.id}>
-              <div className="booking-card-header">
-                <h3>{booking.name}</h3>
-                <button className="delete-btn" type="button" onClick={() => deleteBooking(booking.id)}>Delete</button>
+              <div className="booking-card__tile" aria-hidden="true"><Icon size={20} strokeWidth={iconStroke} /></div>
+              <div className="booking-card__body">
+                <div className="booking-card-header">
+                  <div>
+                    <h3>{booking.name}</h3>
+                    <p>{booking.address || booking.checkin || 'Tap a field to add details'}</p>
+                  </div>
+                  <button className="icon-button danger" type="button" onClick={() => deleteBooking(booking.id)} aria-label={`Delete ${booking.name}`}>
+                    <Trash2 size={18} strokeWidth={iconStroke} />
+                  </button>
+                </div>
+                {fields.map(([field, label]) => (
+                  <BookingField
+                    key={field}
+                    field={field}
+                    booking={booking}
+                    label={label}
+                    value={booking[field] || ''}
+                    editing={editing?.id === booking.id && editing?.field === field}
+                    onEdit={() => setEditing({ id: booking.id, field })}
+                    onCancel={() => setEditing(null)}
+                    onSave={async (patch) => {
+                      await saveBooking({ ...booking, ...patch });
+                      setEditing(null);
+                    }}
+                  />
+                ))}
+                {mapsUrl && <a className="maps-link booking-maps-link" href={mapsUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} strokeWidth={iconStroke} />Open in Google Maps</a>}
               </div>
-              {fields.map(([field, label]) => (
-                <BookingField
-                  key={field}
-                  field={field}
-                  booking={booking}
-                  label={label}
-                  value={booking[field] || ''}
-                  editing={editing?.id === booking.id && editing?.field === field}
-                  onEdit={() => setEditing({ id: booking.id, field })}
-                  onCancel={() => setEditing(null)}
-                  onSave={async (patch) => {
-                    await saveBooking({ ...booking, ...patch });
-                    setEditing(null);
-                  }}
-                />
-              ))}
-              {mapsUrl && <a className="maps-link booking-maps-link" href={mapsUrl} target="_blank" rel="noreferrer">📍 Open in Google Maps</a>}
             </article>
           );
         })}
       </div>
 
       <div className="tip-box">
-        <strong>💡 How to Use</strong>
+        <strong>How to use</strong>
         <p>Click on any field to edit it directly. Address fields offer OpenStreetMap suggestions and save map coordinates when you pick a match.</p>
       </div>
     </article>
@@ -162,7 +170,7 @@ function BookingField({ field, booking, label, value, editing, onEdit, onCancel,
     if (field === 'address') {
       return (
         <div className="booking-field editing">
-          <div className="booking-label">{label}:</div>
+          <div className="booking-label">{label}</div>
           <form className="address-edit-form" onSubmit={(event) => {
             event.preventDefault();
             onSave(addressPatch(booking, draft, selectedPlace));
@@ -194,7 +202,7 @@ function BookingField({ field, booking, label, value, editing, onEdit, onCancel,
 
     return (
       <div className="booking-field editing">
-        <div className="booking-label">{label}:</div>
+        <div className="booking-label">{label}</div>
         <form onSubmit={(event) => { event.preventDefault(); onSave({ [field]: draft }); }}>
           <input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} />
           <button type="submit">Save</button>
@@ -206,7 +214,7 @@ function BookingField({ field, booking, label, value, editing, onEdit, onCancel,
 
   return (
     <button className="booking-field" type="button" onClick={onEdit}>
-      <span className="booking-label">{label}:</span>
+      <span className="booking-label">{field === 'phone' ? <Phone size={14} strokeWidth={iconStroke} aria-hidden="true" /> : <CalendarDays size={14} strokeWidth={iconStroke} aria-hidden="true" />}{label}</span>
       <span className={`booking-value ${!value ? 'empty' : ''}`}>{value || 'Click to add'}</span>
     </button>
   );
@@ -224,10 +232,4 @@ function addressPatch(booking, address, selectedPlace) {
 
 function bookingMapsUrl(booking) {
   return googleMapsSearchUrl({ lat: booking.lat, lng: booking.lng, query: booking.address });
-}
-
-function finiteOrNull(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
 }

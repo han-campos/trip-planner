@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Compass, MapPin, Plus, Search, Trash2, X } from 'lucide-react';
 import { appConfig, activeTripStorageKey, unlockStorageKey } from './config.js';
 import { defaultTripId, seedTrips } from './data/seedTrips.js';
 import { createTripStorage, makeId } from './storage/storage.js';
@@ -8,12 +9,13 @@ import TripView from './components/TripView.jsx';
 import PhraseDeck from './components/PhraseDeck.jsx';
 import BookingsView from './components/BookingsView.jsx';
 import AddTripWizard from './components/AddTripWizard.jsx';
+import { iconStroke } from './components/uiIcons.jsx';
 
 const tabs = [
-  { id: 'guide', label: 'Guide', icon: '🇬🇷' },
-  { id: 'phrases', label: 'Phrases', icon: '🗣️' },
-  { id: 'bookings', label: 'Bookings', icon: '📋' },
-  { id: 'add-trip', label: 'Add Trip', icon: '➕' },
+  { id: 'guide', label: 'Guide' },
+  { id: 'phrases', label: 'Phrases' },
+  { id: 'bookings', label: 'Bookings' },
+  { id: 'add-trip', label: 'Add Trip' },
 ];
 
 export default function App() {
@@ -23,70 +25,74 @@ export default function App() {
   const [trips, setTrips] = useState(seedTrips);
   const [activeTripId, setActiveTripId] = useState(() => localStorage.getItem(activeTripStorageKey) || defaultTripId);
   const [loading, setLoading] = useState(true);
+  const [tripSheetOpen, setTripSheetOpen] = useState(false);
+  const [tripSearch, setTripSearch] = useState('');
 
   useEffect(() => {
-    let alive = true;
+    let mounted = true;
     storage.listTrips().then((loadedTrips) => {
-      if (!alive) return;
+      if (!mounted) return;
       setTrips(loadedTrips);
-      const stored = localStorage.getItem(activeTripStorageKey);
-      const nextId = loadedTrips.some((trip) => trip.id === stored) ? stored : loadedTrips[0]?.id || '';
-      setActiveTripId(nextId);
-      if (nextId) localStorage.setItem(activeTripStorageKey, nextId);
-      else localStorage.removeItem(activeTripStorageKey);
+      const saved = localStorage.getItem(activeTripStorageKey);
+      const next = loadedTrips.find((trip) => trip.id === saved)?.id || loadedTrips[0]?.id || '';
+      setActiveTripId(next);
+      if (next) localStorage.setItem(activeTripStorageKey, next);
       setLoading(false);
     });
-    return () => {
-      alive = false;
-    };
+    return () => { mounted = false; };
   }, [storage]);
 
+  useEffect(() => {
+    if (!tripSheetOpen) return undefined;
+    function onKeyDown(event) {
+      if (event.key === 'Escape') setTripSheetOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [tripSheetOpen]);
+
   const activeTrip = trips.find((trip) => trip.id === activeTripId) || trips[0] || null;
+  const filteredTrips = trips.filter((trip) => `${trip.name} ${trip.subtitle} ${trip.dates}`.toLowerCase().includes(tripSearch.toLowerCase()));
 
   function unlock(passcode) {
-    if (passcode !== appConfig.passcode) return false;
-    localStorage.setItem(unlockStorageKey, 'true');
-    setUnlocked(true);
-    return true;
+    if (passcode === appConfig.passcode) {
+      localStorage.setItem(unlockStorageKey, 'true');
+      setUnlocked(true);
+      return true;
+    }
+    return false;
   }
 
   async function deleteActiveTrip() {
     if (!activeTrip) return;
-    if (!window.confirm('Delete this trip and all its bookings?')) return;
+    if (!window.confirm(`Delete ${activeTrip.name}? This removes its saved bookings too.`)) return;
     await storage.deleteTrip(activeTrip.id);
-    const nextTrips = trips.filter((trip) => trip.id !== activeTrip.id);
-    const nextId = nextTrips[0]?.id || '';
-    setTrips(nextTrips);
-    setActiveTripId(nextId);
-    if (nextId) localStorage.setItem(activeTripStorageKey, nextId);
+    const remaining = trips.filter((trip) => trip.id !== activeTrip.id);
+    setTrips(remaining);
+    const next = remaining[0]?.id || '';
+    setActiveTripId(next);
+    if (next) localStorage.setItem(activeTripStorageKey, next);
     else localStorage.removeItem(activeTripStorageKey);
-    setActiveTab('guide');
+    setTripSheetOpen(false);
   }
 
   function chooseTrip(tripId) {
     setActiveTripId(tripId);
     localStorage.setItem(activeTripStorageKey, tripId);
     setActiveTab('guide');
+    setTripSheetOpen(false);
   }
 
   async function saveTrip(tripDraft) {
-    const trip = normalizeTrip(tripDraft);
-    const saved = await storage.saveTrip(trip);
-    setTrips((current) => {
-      const next = current.some((item) => item.id === saved.id)
-        ? current.map((item) => (item.id === saved.id ? saved : item))
-        : [...current, saved];
-      return next;
-    });
+    const normalized = normalizeTrip(tripDraft);
+    const saved = await storage.saveTrip(normalized);
+    setTrips((current) => [saved, ...current.filter((trip) => trip.id !== saved.id)]);
     chooseTrip(saved.id);
   }
 
   async function updateTrip(trip) {
     const saved = await storage.saveTrip(trip);
     setTrips((current) => current.map((item) => (item.id === saved.id ? saved : item)));
-    setActiveTripId(saved.id);
-    localStorage.setItem(activeTripStorageKey, saved.id);
-    return saved;
   }
 
   if (!unlocked) {
@@ -96,21 +102,25 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-topbar">
-        <div>
-          <p className="eyebrow">Trip Planner V1</p>
-          <h1>{activeTrip?.name || 'Trip Planner'}</h1>
+        <div className="topbar__brand" aria-label="Trip Planner">
+          <span className="topbar__mark" aria-hidden="true"><Compass size={16} strokeWidth={iconStroke} /></span>
+          <span>Trip Planner</span>
         </div>
-        <div className="topbar-actions">
-          <label className="trip-switcher">
-            <span>Trip</span>
-            <select value={activeTrip?.id || ''} onChange={(event) => chooseTrip(event.target.value)} disabled={trips.length === 0}>
-              {trips.length > 0 ? trips.map((trip) => (
-                <option key={trip.id} value={trip.id}>{trip.name}</option>
-              )) : <option value="">No trips yet</option>}
-            </select>
-          </label>
-          <button className="delete-trip-button" type="button" onClick={deleteActiveTrip} disabled={!activeTrip}>Delete Trip</button>
-        </div>
+
+        <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="desktop" />
+
+        <button
+          className={`trip-switcher-button ${tripSheetOpen ? 'is-open' : ''}`}
+          type="button"
+          onClick={() => setTripSheetOpen(true)}
+          disabled={trips.length === 0}
+          aria-haspopup="dialog"
+          aria-expanded={tripSheetOpen}
+        >
+          <MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />
+          <span>{activeTrip?.name || 'No trips'}</span>
+          <ChevronDown size={16} strokeWidth={iconStroke} aria-hidden="true" />
+        </button>
       </header>
 
       {storage.lastError && <p className="storage-warning">Supabase is unavailable; using localStorage fallback. {storage.lastError}</p>}
@@ -125,6 +135,75 @@ export default function App() {
       )}
 
       <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {tripSheetOpen && (
+        <TripSheet
+          trips={filteredTrips}
+          allTripsCount={trips.length}
+          activeTrip={activeTrip}
+          query={tripSearch}
+          onQuery={setTripSearch}
+          onClose={() => setTripSheetOpen(false)}
+          onChoose={chooseTrip}
+          onCreate={() => { setActiveTab('add-trip'); setTripSheetOpen(false); }}
+          onDelete={deleteActiveTrip}
+        />
+      )}
+    </div>
+  );
+}
+
+function TripSheet({ trips, allTripsCount, activeTrip, query, onQuery, onClose, onChoose, onCreate, onDelete }) {
+  return (
+    <div className="sheet-overlay" role="presentation" onMouseDown={onClose}>
+      <section className="bottom-sheet trip-sheet" role="dialog" aria-modal="true" aria-labelledby="trip-sheet-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="sheet-handle" aria-hidden="true" />
+        <header className="sheet-header">
+          <div>
+            <h2 id="trip-sheet-title">Trips</h2>
+            <p>{allTripsCount} saved {allTripsCount === 1 ? 'trip' : 'trips'}</p>
+          </div>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Close trips">
+            <X size={20} strokeWidth={iconStroke} />
+          </button>
+        </header>
+
+        <label className="search-field trip-search">
+          <Search size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="Search trips" autoFocus />
+        </label>
+
+        <div className="trip-list" role="listbox" aria-label="Choose trip">
+          {trips.map((trip) => (
+            <button
+              key={trip.id}
+              type="button"
+              className={`trip-row ${trip.id === activeTrip?.id ? 'is-active' : ''}`}
+              onClick={() => onChoose(trip.id)}
+              role="option"
+              aria-selected={trip.id === activeTrip?.id}
+            >
+              <span>
+                <strong>{trip.name}</strong>
+                <small>{trip.dates || trip.subtitle || 'Trip guide'}</small>
+              </span>
+              <ChevronRight size={18} strokeWidth={iconStroke} aria-hidden="true" />
+            </button>
+          ))}
+          {trips.length === 0 && <p className="empty-inline">No trips match that search.</p>}
+        </div>
+
+        <footer className="trip-sheet__footer">
+          <button className="button button--primary" type="button" onClick={onCreate}>
+            <Plus size={18} strokeWidth={iconStroke} aria-hidden="true" />
+            New trip
+          </button>
+          <button className="button button--danger" type="button" onClick={onDelete} disabled={!activeTrip}>
+            <Trash2 size={18} strokeWidth={iconStroke} aria-hidden="true" />
+            Delete active trip
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -134,7 +213,7 @@ function EmptyTrips({ onCreate }) {
     <section className="page empty-state">
       <h2>No trips yet</h2>
       <p>Create a trip to fill the guide, map, phrases, and bookings.</p>
-      <button className="primary-button" type="button" onClick={onCreate}>Create a trip</button>
+      <button className="button button--primary" type="button" onClick={onCreate}>Create a trip</button>
     </section>
   );
 }
@@ -168,18 +247,18 @@ function normalizeTrip(draft) {
     dates: draft.dates,
     createdAt: now,
     nav: [
-      { label: '📍 Places', href: '#places' },
-      { label: '🗣️ Phrases', href: '#phrases' },
-      { label: '📅 Day Template', href: '#day-template' },
+      { label: 'Places', href: '#places' },
+      { label: 'Phrases', href: '#phrases' },
+      { label: 'Day Template', href: '#day-template' },
     ],
     guideSections: [{
       id: 'places',
-      title: `📍 ${draft.destination || draft.name} — Places`,
+      title: `${draft.destination || draft.name} — Places`,
       area: 'custom',
       groups: [{ id: 'saved-places', title: 'Saved Places', cards: places }],
     }],
     phraseDeck: {
-      title: '🗣️ Phrase Deck',
+      title: 'Phrase Deck',
       categories: [{
         id: 'basics',
         title: 'Basics',
@@ -190,17 +269,17 @@ function normalizeTrip(draft) {
           meaning: phrase.meaning,
         })),
       }],
-      tip: { title: '💡 Practice', body: 'Add practical phrases you expect to use often, then practice them in flashcard mode.' },
+      tip: { title: 'Practice', body: 'Add practical phrases you expect to use often, then practice them in flashcard mode.' },
     },
     dayTemplates: {
-      title: '📅 Daily Schedule Templates',
+      title: 'Daily Schedule Templates',
       templates: [{
         id: 'day-template',
-        title: 'SAMPLE DAY',
-        header: 'Custom Day',
+        title: 'Sample day',
+        header: 'Custom day',
         slots: draft.dayPlan.split('\n').map((line, index) => ({ time: `Stop ${index + 1}`, activity: line.trim(), detail: '' })).filter((slot) => slot.activity),
       }],
-      tip: { title: '💡 Adjust Daily', body: 'Use this as a starting rhythm; bookings and guide cards hold the detailed logistics.' },
+      tip: { title: 'Adjust daily', body: 'Use this as a starting rhythm; bookings and guide cards hold the detailed logistics.' },
     },
     bookings: draft.bookings,
   };
