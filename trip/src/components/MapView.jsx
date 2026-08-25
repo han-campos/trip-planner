@@ -2,13 +2,12 @@ import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ChevronRight, LocateFixed, Minus, Navigation, Plus } from 'lucide-react';
-import { CATEGORIES } from '../places.js';
 import { googleMapsSearchUrl } from '../geo.js';
 import { categoryMeta, categoryTone, iconStroke } from './uiIcons.jsx';
 
 // Map tab for the merged Guide/Map view. Receives already city-filtered,
 // categorized `places` and an `onJump` callback to switch to guide mode.
-export default function MapView({ places, categories = CATEGORIES, activeCategories = [], onToggleCategory, onJump }) {
+export default function MapView({ places, onJump }) {
   const mapNode = useRef(null);
   const mapRef = useRef(null);
   const boundsRef = useRef(null);
@@ -89,23 +88,6 @@ export default function MapView({ places, categories = CATEGORIES, activeCategor
         <button type="button" onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={20} strokeWidth={iconStroke} /></button>
         <button type="button" onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={20} strokeWidth={iconStroke} /></button>
       </div>
-      <Legend categories={categories} activeCategories={activeCategories} onToggleCategory={onToggleCategory} />
-    </div>
-  );
-}
-
-function Legend({ categories, activeCategories, onToggleCategory }) {
-  return (
-    <div className="map-legend" aria-label="Map legend">
-      {categories.map((cat) => {
-        const active = activeCategories.includes(cat.id);
-        return (
-          <button key={cat.id} type="button" className={active ? 'active' : ''} onClick={() => onToggleCategory?.(cat.id)}>
-            <i className={`legend-dot legend-dot--${categoryTone(cat)}`} aria-hidden="true" />
-            {cat.label}
-          </button>
-        );
-      })}
     </div>
   );
 }

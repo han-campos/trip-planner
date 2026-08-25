@@ -69,15 +69,8 @@ export default function TripView({ trip, mode: controlledMode, onMode, onOpenTab
           <h1>{trip.name || trip.title} · Map</h1>
         </header>
         <div className="map-stage">
-          <div className="map-filter-card">
-            {modeSwitch}
-            {filters}
-          </div>
           <MapView
             places={places}
-            categories={categories}
-            activeCategories={cats}
-            onToggleCategory={toggleCat}
             onJump={jumpToGuide}
           />
         </div>
