@@ -30,9 +30,10 @@ export default function App() {
       if (!alive) return;
       setTrips(loadedTrips);
       const stored = localStorage.getItem(activeTripStorageKey);
-      const nextId = loadedTrips.some((trip) => trip.id === stored) ? stored : loadedTrips[0]?.id || defaultTripId;
+      const nextId = loadedTrips.some((trip) => trip.id === stored) ? stored : loadedTrips[0]?.id || '';
       setActiveTripId(nextId);
-      localStorage.setItem(activeTripStorageKey, nextId);
+      if (nextId) localStorage.setItem(activeTripStorageKey, nextId);
+      else localStorage.removeItem(activeTripStorageKey);
       setLoading(false);
     });
     return () => {
@@ -40,7 +41,7 @@ export default function App() {
     };
   }, [storage]);
 
-  const activeTrip = trips.find((trip) => trip.id === activeTripId) || trips[0] || seedTrips[0];
+  const activeTrip = trips.find((trip) => trip.id === activeTripId) || trips[0] || null;
 
   function unlock(passcode) {
     if (passcode !== appConfig.passcode) return false;
@@ -49,9 +50,16 @@ export default function App() {
     return true;
   }
 
-  function lock() {
-    localStorage.removeItem(unlockStorageKey);
-    setUnlocked(false);
+  async function deleteActiveTrip() {
+    if (!activeTrip) return;
+    if (!window.confirm('Delete this trip and all its bookings?')) return;
+    await storage.deleteTrip(activeTrip.id);
+    const nextTrips = trips.filter((trip) => trip.id !== activeTrip.id);
+    const nextId = nextTrips[0]?.id || '';
+    setTrips(nextTrips);
+    setActiveTripId(nextId);
+    if (nextId) localStorage.setItem(activeTripStorageKey, nextId);
+    else localStorage.removeItem(activeTripStorageKey);
     setActiveTab('guide');
   }
 
@@ -95,22 +103,23 @@ export default function App() {
         <div className="topbar-actions">
           <label className="trip-switcher">
             <span>Trip</span>
-            <select value={activeTrip?.id || ''} onChange={(event) => chooseTrip(event.target.value)}>
-              {trips.map((trip) => (
+            <select value={activeTrip?.id || ''} onChange={(event) => chooseTrip(event.target.value)} disabled={trips.length === 0}>
+              {trips.length > 0 ? trips.map((trip) => (
                 <option key={trip.id} value={trip.id}>{trip.name}</option>
-              ))}
+              )) : <option value="">No trips yet</option>}
             </select>
           </label>
-          <button className="ghost-button" type="button" onClick={lock}>Lock</button>
+          <button className="delete-trip-button" type="button" onClick={deleteActiveTrip} disabled={!activeTrip}>Delete Trip</button>
         </div>
       </header>
 
       {storage.lastError && <p className="storage-warning">Supabase is unavailable; using localStorage fallback. {storage.lastError}</p>}
       {loading ? <main className="screen-message">Loading trip…</main> : (
         <main className="content-shell">
-          {activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} onUpdateTrip={updateTrip} />}
-          {activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
-          {activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
+          {!activeTrip && activeTab !== 'add-trip' && <EmptyTrips onCreate={() => setActiveTab('add-trip')} />}
+          {activeTrip && activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} onUpdateTrip={updateTrip} />}
+          {activeTrip && activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
+          {activeTrip && activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
           {activeTab === 'add-trip' && <AddTripWizard onSave={saveTrip} />}
         </main>
       )}
@@ -120,20 +129,36 @@ export default function App() {
   );
 }
 
+function EmptyTrips({ onCreate }) {
+  return (
+    <section className="page empty-state">
+      <h2>No trips yet</h2>
+      <p>Create a trip to fill the guide, map, phrases, and bookings.</p>
+      <button className="primary-button" type="button" onClick={onCreate}>Create a trip</button>
+    </section>
+  );
+}
+
 function normalizeTrip(draft) {
   const now = new Date().toISOString();
   const id = draft.id || makeId();
-  const places = draft.places.map((place) => ({
-    id: place.id || slug(place.title),
-    title: place.title,
-    paragraphs: place.description ? [place.description] : [],
-    bullets: place.notes ? place.notes.split('\n').map((line) => line.trim()).filter(Boolean) : [],
-    links: [],
-    coordinates: {
-      lat: Number(place.lat) || 0,
-      lng: Number(place.lng) || 0,
-    },
-  }));
+  const places = draft.places.map((place) => {
+    const latText = String(place.lat ?? '').trim();
+    const lngText = String(place.lng ?? '').trim();
+    const lat = Number(latText);
+    const lng = Number(lngText);
+    const hasCoordinates = latText !== '' && lngText !== '' && Number.isFinite(lat) && Number.isFinite(lng);
+
+    return {
+      id: place.id || slug(place.title),
+      title: place.title,
+      paragraphs: place.description ? [place.description] : [],
+      bullets: place.notes ? place.notes.split('\n').map((line) => line.trim()).filter(Boolean) : [],
+      links: [],
+      location: place.location?.trim() || '',
+      coordinates: hasCoordinates ? { lat, lng } : null,
+    };
+  });
 
   return {
     id,

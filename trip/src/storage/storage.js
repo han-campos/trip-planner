@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const tripsKey = 'trip-planner:v1:trips';
+const deletedTripsKey = 'trip-planner:v1:deleted-trips';
 const bookingsKey = (tripId) => `trip-planner:v1:bookings:${tripId}`;
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -19,18 +20,29 @@ function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function readDeletedTripIds() {
+  const ids = readJson(deletedTripsKey, []);
+  return Array.isArray(ids) ? ids : [];
+}
+
+function writeDeletedTripIds(ids) {
+  writeJson(deletedTripsKey, [...new Set(ids)]);
+}
+
 function seedLocalTrips(seedTrips) {
   const existing = readJson(tripsKey, null);
-  if (!existing || existing.length === 0) {
-    writeJson(tripsKey, clone(seedTrips));
-    for (const trip of seedTrips) {
+  const deletedTripIds = new Set(readDeletedTripIds());
+  const activeSeeds = seedTrips.filter((seed) => !deletedTripIds.has(seed.id));
+  if (!Array.isArray(existing)) {
+    writeJson(tripsKey, clone(activeSeeds));
+    for (const trip of activeSeeds) {
       writeJson(bookingsKey(trip.id), clone(trip.bookings || []));
     }
-    return clone(seedTrips);
+    return clone(activeSeeds);
   }
 
   const merged = [...existing];
-  for (const seed of seedTrips) {
+  for (const seed of activeSeeds) {
     if (!merged.some((trip) => trip.id === seed.id)) {
       merged.push(clone(seed));
       writeJson(bookingsKey(seed.id), clone(seed.bookings || []));
@@ -58,7 +70,14 @@ function localAdapter(seedTrips) {
       if (!localStorage.getItem(bookingsKey(trip.id))) {
         writeJson(bookingsKey(trip.id), clone(trip.bookings || []));
       }
+      writeDeletedTripIds(readDeletedTripIds().filter((id) => id !== trip.id));
       return clone(trip);
+    },
+    async deleteTrip(tripId) {
+      const next = seedLocalTrips(seedTrips).filter((trip) => trip.id !== tripId);
+      writeJson(tripsKey, next);
+      writeDeletedTripIds([...readDeletedTripIds(), tripId]);
+      localStorage.removeItem(bookingsKey(tripId));
     },
     async listBookings(tripId, seedBookings = []) {
       const existing = readJson(bookingsKey(tripId), null);
@@ -111,10 +130,11 @@ export function createTripStorage(config, seedTrips) {
         return fallback.listTrips();
       }
       if (!data || data.length === 0) {
-        for (const trip of seedTrips) {
+        const localTrips = await fallback.listTrips();
+        for (const trip of localTrips) {
           await supabase.from('trips').upsert({ id: trip.id, payload: trip }, { onConflict: 'id' });
         }
-        return fallback.listTrips();
+        return localTrips;
       }
       const trips = data.map((row) => row.payload);
       writeJson(tripsKey, trips);
@@ -128,6 +148,19 @@ export function createTripStorage(config, seedTrips) {
       }
       await fallback.saveTrip(trip);
       return trip;
+    },
+    async deleteTrip(tripId) {
+      const bookingsResult = await supabase.from('bookings').delete().eq('trip_id', tripId);
+      if (bookingsResult.error) {
+        rememberError(bookingsResult.error);
+        return fallback.deleteTrip(tripId);
+      }
+      const { error } = await supabase.from('trips').delete().eq('id', tripId);
+      if (error) {
+        rememberError(error);
+        return fallback.deleteTrip(tripId);
+      }
+      await fallback.deleteTrip(tripId);
     },
     async listBookings(tripId, seedBookings = []) {
       const { data, error } = await supabase

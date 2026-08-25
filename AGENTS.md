@@ -36,13 +36,13 @@ A **trip** is one structured object; the app renders any trip from data, not cod
 New trips are created either from `trip/src/data/seedTrips.js` or via the
 **Add Trip wizard** in the UI (a non-dev user can drive it).
 - Trips and bookings persist via the storage adapter (Supabase when configured,
-  localStorage otherwise), written to `trip-planner:v1:*` keys. Guide edit mode saves the active trip object; booking address picks save additive `lat`/`lng` fields.
+  localStorage otherwise), written to `trip-planner:v1:*` keys. Guide edit mode saves the active trip object; trip deletion removes that trip plus its bookings; booking address picks save additive `lat`/`lng` fields.
 - Config incl. passcode + Supabase keys + AI endpoint lives in `trip/src/config.js`,
   driven by Vite env vars (`VITE_TRIP_PASSCODE`, `VITE_SUPABASE_URL`,
   `VITE_SUPABASE_ANON_KEY`, `VITE_AI_ENDPOINT_URL`). See `trip/.env.example`.
 
 ## Component map (`trip/src/`)
-- `App.jsx` — shell, unlock/lock, active-trip switch, tab routing (4 tabs:
+- `App.jsx` — shell, cached unlock, active-trip switch/delete, tab routing (4 tabs:
   Guide, Phrases, Bookings, Add Trip).
 - `components/TripView.jsx` — **merged Guide + Map** view with a Guide⇄Map slider
   and a per-city filter (All/Crete/Athens). Defaults to whole trip.
@@ -52,8 +52,8 @@ New trips are created either from `trip/src/data/seedTrips.js` or via the
   category; popup links jump to the guide and open Google Maps deep links.
 - `components/PhraseDeck.jsx` — searchable, category-filtered flashcard deck + tap-to-flip + practice mode.
 - `components/BookingsView.jsx` — shared bookings, tap-to-edit fields, add/delete, address autocomplete, Google Maps links.
-- `components/AddTripWizard.jsx` — user-side "create a new trip" form.
-- `components/PasswordGate.jsx` — shared-passcode gate; unlock cached in localStorage + Lock button.
+- `components/AddTripWizard.jsx` — user-side "create a new trip" form with place-location autocomplete.
+- `components/PasswordGate.jsx` — shared-passcode gate; unlock cached in localStorage.
 - `places.js` — shared helpers: category classifier (beaches/nature/towns/dining/
   history/activity), `collectPlaces`, city filtering, legend data.
 - `geo.js` — Nominatim autocomplete/geocoding seam plus free Google Maps deep-link helpers.

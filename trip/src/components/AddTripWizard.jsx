@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import LocationAutocomplete from './LocationAutocomplete.jsx';
 
-const blankPlace = { title: '', description: '', notes: '', lat: '', lng: '' };
+const blankPlace = { title: '', description: '', notes: '', location: '', lat: '', lng: '' };
 const blankPhrase = { greek: '', pronunciation: '', meaning: '' };
 const blankBooking = { name: '', checkin: '', checkout: '', confirmation: '', phone: '', address: '' };
 
@@ -88,16 +89,20 @@ function Places({ draft, update }) {
   return (
     <section>
       <h3>Places and map pins</h3>
-      <p className="help-text">Latitude and longitude make the Leaflet map work. Use rough coordinates if exact ones are unknown.</p>
+      <p className="help-text">Type a place or address and pick a match to add a map pin. If you skip the location, the place saves without a pin.</p>
       {draft.places.map((place, index) => (
         <div className="nested-card" key={index}>
           <Field label="Place title" value={place.title} onChange={(value) => updateList(update, draft, 'places', index, { ...place, title: value })} />
           <TextArea label="Description" value={place.description} onChange={(value) => updateList(update, draft, 'places', index, { ...place, description: value })} />
           <TextArea label="Notes, one per line" value={place.notes} onChange={(value) => updateList(update, draft, 'places', index, { ...place, notes: value })} />
-          <div className="two-col">
-            <Field label="Latitude" value={place.lat} onChange={(value) => updateList(update, draft, 'places', index, { ...place, lat: value })} />
-            <Field label="Longitude" value={place.lng} onChange={(value) => updateList(update, draft, 'places', index, { ...place, lng: value })} />
-          </div>
+          <LocationAutocomplete
+            label="Location"
+            value={place.location}
+            placeholder="Type a place or address, then pick a match"
+            onChange={(value) => updateList(update, draft, 'places', index, { ...place, location: value, lat: '', lng: '' })}
+            onSelect={(match) => updateList(update, draft, 'places', index, { ...place, location: match.label, lat: match.lat, lng: match.lng })}
+          />
+          {hasCoordinates(place) && <p className="location-picked">Saved map pin: {Number(place.lat).toFixed(5)}, {Number(place.lng).toFixed(5)}</p>}
         </div>
       ))}
       <button type="button" className="ghost-button" onClick={() => update('places', [...draft.places, { ...blankPlace }])}>+ Add place</button>
@@ -167,6 +172,10 @@ function Field({ label, value, onChange, placeholder }) {
 
 function TextArea({ label, value, onChange, rows = 4 }) {
   return <label className="form-group"><span>{label}</span><textarea rows={rows} value={value} onChange={(event) => onChange(event.target.value)} /></label>;
+}
+
+function hasCoordinates(place) {
+  return place.lat !== '' && place.lng !== '' && Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lng));
 }
 
 function updateList(update, draft, key, index, value) {
