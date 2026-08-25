@@ -73,6 +73,9 @@ export default function TripView({ trip, mode: controlledMode, onMode, onOpenTab
             places={places}
             onJump={jumpToGuide}
           />
+          <div className="map-filterbar" aria-label="Map filters">
+            {filters}
+          </div>
         </div>
       </article>
     );
