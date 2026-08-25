@@ -785,7 +785,7 @@
   .tip-box strong { display: block; margin-bottom: 4px; color: var(--color-warning); }
   .tip-box p { margin: 0; color: var(--color-text-2); }
 
-  .map-shell { position: relative; height: 100%; min-height: 520px; }
+  .map-shell { position: relative; height: calc(100vh - 120px); height: calc(100dvh - 120px); min-height: 520px; }
   .map-page { position: relative; height: 100%; }
   .leaflet-panel { width: 100%; height: 100%; background: #E0F2FE; }
   .map-filter-card {
