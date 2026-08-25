@@ -123,7 +123,12 @@ export default function App() {
         </button>
       </header>
 
-      {storage.lastError && <p className="storage-warning">Supabase is unavailable; using localStorage fallback. {storage.lastError}</p>}
+      {storage.mode === 'local-only' && (
+        <p className="storage-warning storage-warning--local" role="status">
+          ⚠️ <strong>Local-only mode.</strong> Supabase isn't configured in this build, so trips and bookings are saved to this device only and won't be shared. Add <code>VITE_SUPABASE_URL</code> + <code>VITE_SUPABASE_ANON_KEY</code> and rebuild to enable sharing.
+        </p>
+      )}
+      {storage.mode === 'supabase' && storage.lastError && <p className="storage-warning">Supabase is unavailable; using local storage fallback for now. {storage.lastError}</p>}
       {loading ? <main className="screen-message">Loading trip…</main> : (
         <main className="content-shell">
           {!activeTrip && activeTab !== 'add-trip' && <EmptyTrips onCreate={() => setActiveTab('add-trip')} />}

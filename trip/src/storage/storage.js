@@ -3,9 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 const tripsKey = 'trip-planner:v1:trips';
 const deletedTripsKey = 'trip-planner:v1:deleted-trips';
 const bookingsKey = (tripId) => `trip-planner:v1:bookings:${tripId}`;
+const CONFIG_MODE_KEY = 'trip-planner:v1:config-mode';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const makeId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+// Remember what mode we booted in, so a later Supabase failure v. "not configured"
+// can be told apart in the UI.
+function setConfigMode(mode) {
+  try {
+    localStorage.setItem(CONFIG_MODE_KEY, mode);
+  } catch { /* ignore */ }
+}
 
 function readJson(key, fallback) {
   try {
@@ -106,8 +115,14 @@ function localAdapter(seedTrips) {
 export function createTripStorage(config, seedTrips) {
   const fallback = localAdapter(seedTrips);
   const hasSupabase = Boolean(config.supabaseUrl && config.supabaseAnonKey);
-  if (!hasSupabase) return fallback;
+  if (!hasSupabase) {
+    fallback.mode = 'local-only';
+    fallback.reason = 'Supabase not configured (missing VITE_SUPABASE_URL / ANON_KEY).';
+    setConfigMode('local-only');
+    return fallback;
+  }
 
+  setConfigMode('supabase');
   const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -120,6 +135,7 @@ export function createTripStorage(config, seedTrips) {
 
   return {
     mode: 'supabase',
+    lastError: null,
     get lastError() {
       return lastError;
     },

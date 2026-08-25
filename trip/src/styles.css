@@ -262,6 +262,11 @@
     font-size: var(--text-sm);
     font-weight: 500;
   }
+  .storage-warning--local {
+    border-color: color-mix(in srgb, #F59E0B 30%, transparent);
+    background: #FEF3C7;
+    color: #78350F;
+  }
 
   .button {
     min-height: var(--touch-min);
