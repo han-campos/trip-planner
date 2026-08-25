@@ -99,8 +99,8 @@ export default function GuideView({ trip, sections, filters, modeSwitch, onUpdat
         </div>
       )}
 
-      {filters}
       {modeSwitch}
+      {filters}
 
       {guideSections.map((section) => (
         <section className="guide-section" id={section.id} key={section.id}>

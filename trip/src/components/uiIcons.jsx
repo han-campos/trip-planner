@@ -9,7 +9,6 @@ import {
   Compass,
   Hotel,
   Landmark,
-  Languages,
   Map,
   MapPin,
   Mountain,
@@ -21,13 +20,25 @@ import {
   Waves,
 } from 'lucide-react';
 
-export const iconStroke = 1.75;
+export const iconStroke = 2.1;
+
+function PhrasesTabIcon({ size = 24, strokeWidth = iconStroke, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 6.5A5.5 5.5 0 0 1 10.5 1h3A5.5 5.5 0 0 1 19 6.5v4A5.5 5.5 0 0 1 13.5 16H11l-4.5 4v-4.6A5.5 5.5 0 0 1 5 11.5z" />
+      <path d="M8.25 8.25h3.5" />
+      <path d="M8.25 11.25h2" />
+      <path d="m13.25 12 1.65-4.5L16.55 12" />
+      <path d="M13.75 10.75h2.3" />
+    </svg>
+  );
+}
 
 export const tabIcons = {
   guide: Compass,
-  phrases: Languages,
+  phrases: PhrasesTabIcon,
   bookings: CalendarCheck,
-  'add-trip': Plus,
+  trips: Map,
 };
 
 const categoryDetails = {
@@ -72,7 +83,6 @@ export {
   Check,
   ChevronRight,
   Compass,
-  Languages,
   Map,
   MapPin,
   Plus,

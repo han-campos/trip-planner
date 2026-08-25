@@ -15,7 +15,7 @@ const tabs = [
   { id: 'guide', label: 'Guide' },
   { id: 'phrases', label: 'Phrases' },
   { id: 'bookings', label: 'Bookings' },
-  { id: 'add-trip', label: 'Add Trip' },
+  { id: 'trips', label: 'Trips' },
 ];
 
 export default function App() {
@@ -26,6 +26,7 @@ export default function App() {
   const [activeTripId, setActiveTripId] = useState(() => localStorage.getItem(activeTripStorageKey) || defaultTripId);
   const [loading, setLoading] = useState(true);
   const [tripSheetOpen, setTripSheetOpen] = useState(false);
+  const [guideMode, setGuideMode] = useState('guide');
   const [tripSearch, setTripSearch] = useState('');
 
   useEffect(() => {
@@ -63,6 +64,16 @@ export default function App() {
     return false;
   }
 
+  function selectTab(tabId) {
+    if (tabId === 'guide') setGuideMode('guide');
+    setActiveTab(tabId);
+  }
+
+  function startCreateTrip() {
+    setActiveTab('new-trip');
+    setTripSheetOpen(false);
+  }
+
   async function deleteActiveTrip() {
     if (!activeTrip) return;
     if (!window.confirm(`Delete ${activeTrip.name}? This removes its saved bookings too.`)) return;
@@ -79,6 +90,7 @@ export default function App() {
   function chooseTrip(tripId) {
     setActiveTripId(tripId);
     localStorage.setItem(activeTripStorageKey, tripId);
+    setGuideMode('guide');
     setActiveTab('guide');
     setTripSheetOpen(false);
   }
@@ -107,20 +119,25 @@ export default function App() {
           <span>Trip Planner</span>
         </div>
 
-        <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="desktop" />
+        <TabBar tabs={tabs} activeTab={activeTab} onChange={selectTab} variant="desktop" />
 
-        <button
-          className={`trip-switcher-button ${tripSheetOpen ? 'is-open' : ''}`}
-          type="button"
-          onClick={() => setTripSheetOpen(true)}
-          disabled={trips.length === 0}
-          aria-haspopup="dialog"
-          aria-expanded={tripSheetOpen}
-        >
-          <MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />
-          <span>{activeTrip?.name || 'No trips'}</span>
-          <ChevronDown size={16} strokeWidth={iconStroke} aria-hidden="true" />
-        </button>
+        <div className="topbar__actions">
+          <button
+            className={`trip-switcher-button ${tripSheetOpen ? 'is-open' : ''}`}
+            type="button"
+            onClick={() => setTripSheetOpen(true)}
+            disabled={trips.length === 0}
+            aria-haspopup="dialog"
+            aria-expanded={tripSheetOpen}
+          >
+            <MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />
+            <span>{activeTrip?.name || 'No trips'}</span>
+            <ChevronDown size={16} strokeWidth={iconStroke} aria-hidden="true" />
+          </button>
+          <button className="icon-button topbar-create-button" type="button" onClick={startCreateTrip} aria-label="Create new trip">
+            <Plus size={20} strokeWidth={iconStroke} />
+          </button>
+        </div>
       </header>
 
       {storage.mode === 'local-only' && (
@@ -131,15 +148,16 @@ export default function App() {
       {storage.mode === 'supabase' && storage.lastError && <p className="storage-warning">Supabase is unavailable; using local storage fallback for now. {storage.lastError}</p>}
       {loading ? <main className="screen-message">Loading trip…</main> : (
         <main className="content-shell">
-          {!activeTrip && activeTab !== 'add-trip' && <EmptyTrips onCreate={() => setActiveTab('add-trip')} />}
-          {activeTrip && activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} onUpdateTrip={updateTrip} />}
+          {!activeTrip && activeTab !== 'new-trip' && activeTab !== 'trips' && <EmptyTrips onCreate={startCreateTrip} />}
+          {activeTrip && activeTab === 'guide' && <TripView trip={activeTrip} mode={guideMode} onMode={setGuideMode} onOpenTab={selectTab} onUpdateTrip={updateTrip} />}
           {activeTrip && activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
           {activeTrip && activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
-          {activeTab === 'add-trip' && <AddTripWizard onSave={saveTrip} />}
+          {activeTab === 'trips' && <TripsPage trips={filteredTrips} allTripsCount={trips.length} activeTrip={activeTrip} query={tripSearch} onQuery={setTripSearch} onChoose={chooseTrip} onCreate={startCreateTrip} onDelete={deleteActiveTrip} />}
+          {activeTab === 'new-trip' && <AddTripWizard onSave={saveTrip} />}
         </main>
       )}
 
-      <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={tabs} activeTab={activeTab} onChange={selectTab} />
 
       {tripSheetOpen && (
         <TripSheet
@@ -150,7 +168,7 @@ export default function App() {
           onQuery={setTripSearch}
           onClose={() => setTripSheetOpen(false)}
           onChoose={chooseTrip}
-          onCreate={() => { setActiveTab('add-trip'); setTripSheetOpen(false); }}
+          onCreate={startCreateTrip}
           onDelete={deleteActiveTrip}
         />
       )}
@@ -210,6 +228,53 @@ function TripSheet({ trips, allTripsCount, activeTrip, query, onQuery, onClose, 
         </footer>
       </section>
     </div>
+  );
+}
+
+function TripsPage({ trips, allTripsCount, activeTrip, query, onQuery, onChoose, onCreate, onDelete }) {
+  return (
+    <article className="page trips-page">
+      <header className="hero-card trips-hero">
+        <div>
+          <h1>Trips</h1>
+          <p>{allTripsCount} saved {allTripsCount === 1 ? 'trip' : 'trips'}. Pick one to open its guide.</p>
+        </div>
+        <button className="button button--primary" type="button" onClick={onCreate}>
+          <Plus size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          New trip
+        </button>
+      </header>
+
+      <label className="search-field trip-search trips-page__search">
+        <Search size={18} strokeWidth={iconStroke} aria-hidden="true" />
+        <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="Search trips" />
+      </label>
+
+      <div className="trip-list trips-page__list" role="listbox" aria-label="Choose trip">
+        {trips.map((trip) => (
+          <button
+            key={trip.id}
+            type="button"
+            className={`trip-row ${trip.id === activeTrip?.id ? 'is-active' : ''}`}
+            onClick={() => onChoose(trip.id)}
+            role="option"
+            aria-selected={trip.id === activeTrip?.id}
+          >
+            <span>
+              <strong>{trip.name}</strong>
+              <small>{trip.dates || trip.subtitle || 'Trip guide'}</small>
+            </span>
+            <ChevronRight size={18} strokeWidth={iconStroke} aria-hidden="true" />
+          </button>
+        ))}
+        {trips.length === 0 && <p className="empty-inline">No trips match that search.</p>}
+      </div>
+
+      <button className="button button--danger trips-page__delete" type="button" onClick={onDelete} disabled={!activeTrip}>
+        <Trash2 size={18} strokeWidth={iconStroke} aria-hidden="true" />
+        Delete active trip
+      </button>
+    </article>
   );
 }
 

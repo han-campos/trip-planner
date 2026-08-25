@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Compass, Map as MapIcon } from 'lucide-react';
+import { ChevronLeft, List, Map as MapIcon } from 'lucide-react';
 import GuideView from './GuideView.jsx';
 import MapView from './MapView.jsx';
 import { CategoryIcon, iconStroke } from './uiIcons.jsx';
@@ -11,11 +11,12 @@ import {
   filterSectionsByCity, filterSectionsByCategory,
 } from '../places.js';
 
-// Merged Guide/Map view. One page with a Guide ⇄ Map slider, a per-city filter,
-// and a multi-select category filter — both apply to guide + map. Defaults to
-// the whole trip.
-export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
-  const [mode, setMode] = useState('guide'); // 'guide' | 'map'
+// Merged Guide tab view. The parent tab remains "Guide"; this in-tab switch
+// moves between the trip List and Map, with filters shared across both modes.
+export default function TripView({ trip, mode: controlledMode, onMode, onOpenTab, onUpdateTrip }) {
+  const [localMode, setLocalMode] = useState('guide'); // 'guide' | 'map'
+  const mode = controlledMode || localMode;
+  const setMode = onMode || setLocalMode;
   const [city, setCity] = useState('all');    // 'all' | 'crete' | 'athens' ...
   const [cats, setCats] = useState([]);       // [] = all categories
 
@@ -61,22 +62,25 @@ export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
   if (mode === 'map') {
     return (
       <article className="map-shell" aria-label="Trip map">
-        <div className="map-filter-card">
-          <div className="map-filter-card__top">
-            <button type="button" className="button button--secondary map-back-btn" onClick={() => setMode('guide')}>
-              <Compass size={18} strokeWidth={iconStroke} /> Guide list
-            </button>
+        <header className="map-nav-header">
+          <button type="button" className="map-nav-back" onClick={() => setMode('guide')} aria-label="Back to List">
+            <ChevronLeft size={24} strokeWidth={iconStroke} />
+          </button>
+          <h1>{trip.name || trip.title} · Map</h1>
+        </header>
+        <div className="map-stage">
+          <div className="map-filter-card">
             {modeSwitch}
+            {filters}
           </div>
-          {filters}
+          <MapView
+            places={places}
+            categories={categories}
+            activeCategories={cats}
+            onToggleCategory={toggleCat}
+            onJump={jumpToGuide}
+          />
         </div>
-        <MapView
-          places={places}
-          categories={categories}
-          activeCategories={cats}
-          onToggleCategory={toggleCat}
-          onJump={jumpToGuide}
-        />
       </article>
     );
   }
@@ -95,7 +99,7 @@ export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
 
 function ModeSwitch({ mode, onMode }) {
   return (
-    <div className="mode-switch" role="tablist" aria-label="Guide or Map view">
+    <div className="mode-switch" role="tablist" aria-label="List or Map view">
       <button
         type="button"
         role="tab"
@@ -103,8 +107,8 @@ function ModeSwitch({ mode, onMode }) {
         className={mode === 'guide' ? 'active' : ''}
         onClick={() => onMode('guide')}
       >
-        <Compass size={18} strokeWidth={iconStroke} aria-hidden="true" />
-        Guide
+        <List size={18} strokeWidth={iconStroke} aria-hidden="true" />
+        List
       </button>
       <button
         type="button"
