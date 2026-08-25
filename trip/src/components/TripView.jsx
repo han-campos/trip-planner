@@ -91,7 +91,6 @@ export default function TripView({ trip, onOpenTab, onUpdateTrip }) {
               onClick={() => toggleCat(cat.id)}
               title={cat.label}
             >
-              <i className="cat-dot" style={{ background: cat.color }} />
               {cat.emoji} {cat.label}
             </button>
           ))}

@@ -258,8 +258,6 @@ a { color: var(--blue); text-decoration: none; font-weight: 700; }
 .cat-filter::-webkit-scrollbar { display: none; }
 .cat-filter button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: white; color: #34495e; border-radius: 999px; padding: 7px 12px; font-weight: 800; font-size: 12px; white-space: nowrap; cursor: pointer; }
 .cat-filter button.active { background: var(--indigo); border-color: var(--indigo); color: white; }
-.cat-filter button.active .cat-dot { box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
-.cat-filter .cat-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
 
 .map-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; background: white; border-radius: 12px; padding: 12px 14px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #34495e; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .map-legend span { display: inline-flex; align-items: center; }
