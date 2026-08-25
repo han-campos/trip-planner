@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-export default function GuideView({ trip, onOpenTab }) {
+export default function GuideView({ trip, sections, onOpenTab, onOpenMap }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const guideSections = sections || trip.guideSections;
   return (
     <article className="page guide-page">
       <div className="sticky-section-menu">
@@ -14,8 +15,10 @@ export default function GuideView({ trip, onOpenTab }) {
             {trip.nav.map((item) => (
               <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
             ))}
-            <button type="button" onClick={() => onOpenTab('map')}>🗺️ Open Map</button>
-            <button type="button" onClick={() => onOpenTab('phrases')}>🗣️ Practice Phrases</button>
+            {onOpenMap && (
+              <button type="button" onClick={() => { setMenuOpen(false); onOpenMap(); }}>🗺️ View Map</button>
+            )}
+            <button type="button" onClick={() => { setMenuOpen(false); onOpenTab('phrases'); }}>🗣️ Practice Phrases</button>
           </div>
         )}
       </div>
@@ -25,7 +28,7 @@ export default function GuideView({ trip, onOpenTab }) {
         <p>{trip.subtitle}</p>
       </header>
 
-      {trip.guideSections.map((section) => (
+      {guideSections.map((section) => (
         <section className="section" id={section.id} key={section.id}>
           <h2>{section.title}</h2>
           {section.groups.map((group) => (

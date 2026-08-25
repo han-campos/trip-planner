@@ -4,15 +4,13 @@ import { defaultTripId, seedTrips } from './data/seedTrips.js';
 import { createTripStorage, makeId } from './storage/storage.js';
 import PasswordGate from './components/PasswordGate.jsx';
 import TabBar from './components/TabBar.jsx';
-import GuideView from './components/GuideView.jsx';
-import MapView from './components/MapView.jsx';
+import TripView from './components/TripView.jsx';
 import PhraseDeck from './components/PhraseDeck.jsx';
 import BookingsView from './components/BookingsView.jsx';
 import AddTripWizard from './components/AddTripWizard.jsx';
 
 const tabs = [
   { id: 'guide', label: 'Guide', icon: '🇬🇷' },
-  { id: 'map', label: 'Map', icon: '🗺️' },
   { id: 'phrases', label: 'Phrases', icon: '🗣️' },
   { id: 'bookings', label: 'Bookings', icon: '📋' },
   { id: 'add-trip', label: 'Add Trip', icon: '➕' },
@@ -102,8 +100,7 @@ export default function App() {
       {storage.lastError && <p className="storage-warning">Supabase is unavailable; using localStorage fallback. {storage.lastError}</p>}
       {loading ? <main className="screen-message">Loading trip…</main> : (
         <main className="content-shell">
-          {activeTab === 'guide' && <GuideView trip={activeTrip} onOpenTab={setActiveTab} />}
-          {activeTab === 'map' && <MapView trip={activeTrip} onOpenGuide={() => setActiveTab('guide')} />}
+          {activeTab === 'guide' && <TripView trip={activeTrip} onOpenTab={setActiveTab} />}
           {activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
           {activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
           {activeTab === 'add-trip' && <AddTripWizard onSave={saveTrip} />}
