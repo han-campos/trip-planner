@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Greece Trip Planning Guide - Crete & Athens</title>
+    <style>
+        .password-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        
+        .password-screen.hidden {
+            display: none;
+        }
+        
+        .password-box {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+        }
+        
+        .password-box h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            border: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        
+        .password-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            -webkit-appearance: none;
+            -webkit-border-radius: 5px;
+        }
+        
+        .password-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .password-box button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -webkit-border-radius: 5px;
+        }
+        
+        .password-box button:active {
+            background: #5568d3;
+        }
+        
+        .password-error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .tab-header {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #3498db;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: white;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+            -webkit-border-radius: 0;
+        }
+        
+        .tab-btn:active {
+            background: #f5f5f5;
+        }
+        
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .booking-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .booking-card:hover {
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+            border-color: #3498db;
+        }
+        
+        .booking-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .booking-card h3 {
+            margin: 0;
+            color: #2980b9;
+            font-size: 16px;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .delete-btn:active {
+            background: #c0392b;
+        }
+        
+        .booking-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .booking-field:last-child {
+            border-bottom: none;
+        }
+        
+        .booking-label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        
+        .booking-value {
+            flex: 1;
+            text-align: right;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 3px;
+            transition: background 0.2s;
+            word-break: break-word;
+            max-width: 60%;
+            text-align: left;
+        }
+        
+        .booking-value:hover {
+            background: #e8f4f8;
+        }
+        
+        .booking-value.empty {
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        .add-booking-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 30px;
+            -webkit-appearance: none;
+            -webkit-border-radius: 5px;
+        }
+        
+        .add-booking-btn:active {
+            background: #229954;
+        }
+        
+        .add-booking-form {
+            background: #f0f7ff;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .add-booking-form.show {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            font-size: 14px;
+            font-family: inherit;
+            -webkit-appearance: none;
+            -webkit-border-radius: 3px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-group h3 {
+            margin: 0;
+            color: #2980b9;
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .form-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -webkit-border-radius: 3px;
+        }
+        
+        .form-btn.save {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .form-btn.save:active {
+            background: #229954;
+        }
+        
+        .form-btn.cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .form-btn.cancel:active {
+            background: #7f8c8d;
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 2px solid #3498db;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0;
+        }
+        
+        .menu-title {
+            padding: 12px 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+        
+        .menu-toggle-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: auto;
+            min-width: 60px;
+            -webkit-appearance: none;
+            -webkit-border-radius: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .menu-toggle-btn:active {
+            background: #2980b9;
+        }
+        
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background: white;
+            display: none;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .nav-menu.show {
+            display: flex;
+        }
+        
+        .nav-menu li {
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .nav-menu li:last-child {
+            border-bottom: none;
+        }
+        
+        .nav-menu a {
+            display: block;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .nav-menu a:active {
+            background: #e8f4f8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            margin-top: 0;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+        
+        h2 {
+            font-size: 20px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        
+        h3 {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+            border-color: #3498db;
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        
+        .card ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .card li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .card li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+        }
+        
+        .list-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .list-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .list-item {
+            background: #f0f7ff;
+            border-left: 4px solid #3498db;
+            padding: 12px;
+            border-radius: 3px;
+        }
+        
+        .list-item-title {
+            font-weight: 600;
+            color: #2980b9;
+            font-size: 15px;
+        }
+        
+        .list-item-detail {
+            font-size: 13px;
+            color: #555;
+            margin-top: 4px;
+        }
+        
+        .day-template {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .day-header {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            margin: -25px -25px 20px -25px;
+            border-radius: 6px 6px 0 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .time-slot {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .time-slot:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .time {
+            font-weight: 700;
+            color: #2980b9;
+            font-size: 14px;
+        }
+        
+        .activity {
+            margin-top: 6px;
+            color: #333;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .activity-detail {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+            margin-left: 10px;
+            border-left: 2px solid #ecf0f1;
+            padding-left: 10px;
+        }
+        
+        .tip-box {
+            background: #fffacd;
+            border-left: 4px solid #f0ad4e;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        .tip-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #d68910;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .list-2col {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                padding-bottom: 10px;
+            }
+            
+            h2 {
+                font-size: 18px;
+                margin-top: 20px;
+                margin-bottom: 12px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .day-template {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .day-header {
+                margin: -15px -15px 15px -15px;
+                font-size: 16px;
+                padding: 12px;
+            }
+            
+            .time-slot {
+                margin-bottom: 15px;
+                padding-bottom: 12px;
+            }
+            
+            .tip-box {
+                font-size: 13px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PASSWORD SCREEN -->
+    <div class="password-screen" id="passwordScreen">
+        <div class="password-box">
+            <h2>Greece Trip Guide</h2>
+            <input type="password" id="passwordInput" placeholder="Enter password" />
+            <button onclick="checkPassword()">Access</button>
+            <div class="password-error" id="passwordError">Incorrect password. Try again.</div>
+        </div>
+    </div>
+    
+    <!-- TAB HEADER -->
+    <div class="tab-header">
+        <button class="tab-btn active" id="guideTabBtn" onclick="switchTab('guide')">🇬🇷 Greece Guide</button>
+        <button class="tab-btn" id="bookingsTabBtn" onclick="switchTab('bookings')">📋 Bookings</button>
+    </div>
+    
+    <!-- GREECE GUIDE TAB -->
+    <div class="tab-content active" id="guideTab">
+    <div class="sticky-nav">
+        <div class="nav-header">
+            <span class="menu-title">Greece Trip Guide</span>
+            <button class="menu-toggle-btn" id="menuBtn" onclick="toggleMenu()">☰ Menu</button>
+        </div>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#crete-things">🏖️ Crete Things to Do</a></li>
+            <li><a href="#crete-water">🚤 Water Activities</a></li>
+            <li><a href="#crete-activities">⛵ More Crete</a></li>
+            <li><a href="#athens-things">🏛️ Athens Things to Do</a></li>
+            <li><a href="#greek-phrases">🗣️ Greek Phrases</a></li>
+            <li><a href="#local-day">🇬🇷 Local Day</a></li>
+            <li><a href="#tourist-day">🏙️ Tourist Day</a></li>
+        </ul>
+    </div>
+    
+    <div class="container">
+        <h1>🇬🇷 Greece Trip Planning Guide</h1>
+        <p class="subtitle">Crete (Sept 9-13) & Athens (Sept 13-18) — Complete guide with things to do, restaurants, activities, Greek phrases & daily templates</p>
+        
+        <!-- CRETE SECTION -->
+        <div class="section">
+            <h2 id="crete-things">🏖️ CRETE — Things to Do</h2>
+            
+            <h3>Beaches & Water</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Agioi Apostoli Beaches</h3>
+                    <p>Multiple sandy beaches within walking distance of Naeva. Local favorite, less crowded.</p>
+                    <ul>
+                        <li>Agioi Apostoli Beach</li>
+                        <li>Chryssi Akti (Golden Beach)</li>
+                        <li>Kalamaki Beach</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Elafonissi Beach</h3>
+                    <p>Famous pink sand beach. 1.5 hour drive west from Chania. Must-see but touristy.</p>
+                    <ul>
+                        <li>Pink/gold sand</li>
+                        <li>Lagoon swimming</li>
+                        <li>Best before 10 AM</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Balos Lagoon</h3>
+                    <p>Stunning turquoise lagoon with steep cliffs. West coast. 1.5 hours drive.</p>
+                    <ul>
+                        <li>Lagoon views</li>
+                        <li>Hiking to cliffs</li>
+                        <li>Less crowded mornings</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Falassarna Beach</h3>
+                    <p>Pink sand, closer than Elafonissi, easier access. Local spot with restaurants.</p>
+                    <ul>
+                        <li>Pink sand patches</li>
+                        <li>Beach bars/tavernas</li>
+                        <li>1 hour drive</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Hiking & Nature</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Samaria Gorge</h3>
+                    <p>Europe's longest canyon. 16km downhill hike, 6-8 hours. Book shuttle in advance.</p>
+                    <ul>
+                        <li>Full day commitment</li>
+                        <li>Very rewarding</li>
+                        <li>Early start required</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Imbros Gorge</h3>
+                    <p>Easier alternative to Samaria. 4-5 hour hike, scenic, less crowded.</p>
+                    <ul>
+                        <li>Half-day option</li>
+                        <li>River walk</li>
+                        <li>Less extreme</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Elos Village & Hiking</h3>
+                    <p>White Mountains village. Short hiking trails, chestnut-based food, rural vibes.</p>
+                    <ul>
+                        <li>Drive 40-50 min</li>
+                        <li>Local tavernas</li>
+                        <li>Easy walks</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Botanical Garden</h3>
+                    <p>Near Chania, on Samaria route. Relaxing afternoon if you skip the gorge hike.</p>
+                    <ul>
+                        <li>Easy walk</li>
+                        <li>Mountain views</li>
+                        <li>Cafe on-site</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Towns & Markets</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Chania Old Town</h3>
+                    <p>Venetian harbor, lighthouse, narrow streets, cafes, restaurants, museums.</p>
+                    <ul>
+                        <li>Nautical Museum</li>
+                        <li>Lighthouse at sunset</li>
+                        <li>Waterfront dining</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Chania Municipal Market (Agora)</h3>
+                    <p>Cross-shaped building. Wednesday & Saturday mornings. Produce, cheese, olives, herbs.</p>
+                    <ul>
+                        <li>Local vendors</li>
+                        <li>Fresh seasonal food</li>
+                        <li>Chat with farmers</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Astrikas Village</h3>
+                    <p>Home to Biolea estate. Olive oil tour, traditional restaurant in olive grove.</p>
+                    <ul>
+                        <li>Working olive oil estate</li>
+                        <li>Tasting room</li>
+                        <li>Farm-to-table lunch</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Kaliviani & Remote Villages</h3>
+                    <p>Small villages near Balos/Falassarna. Traditional tavernas, local food, quiet vibe.</p>
+                    <ul>
+                        <li>No tourists</li>
+                        <li>Authentic food</li>
+                        <li>Local stories</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Dining Experiences</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Fine Dining</h3>
+                    <ul>
+                        <li><strong>Salis</strong> — Harbor quay, seafood, wine</li>
+                        <li><strong>To Maridaki</strong> — Creative Greek, maritime setting</li>
+                        <li><strong>Arismari</strong> — Modern & traditional, local produce</li>
+                        <li><strong>Pelagos</strong> — Boho chic, grilled salmon</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Traditional Tavernas</h3>
+                    <ul>
+                        <li><strong>Chrisostomos</strong> — Wood stove, lamb, moussaka, locals</li>
+                        <li><strong>Tamam</strong> — Turkish bath setting, atmospheric</li>
+                        <li><strong>Rousios</strong> — Agia Roumeli, post-Samaria lunch</li>
+                        <li>Village tavernas — Order dakos, lamb tsigariasto, fresh greens</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Casual & Local</h3>
+                    <ul>
+                        <li>Waterfront tavernas — Fresh fish, casual, people-watching</li>
+                        <li>Bougatsa shop — Breakfast pastry, €2, local bakery</li>
+                        <li>Harbourfront cafes — Coffee, meze, slow sitting</li>
+                        <li>Village taverna — Where locals eat lunch, 1:30 PM</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Food to Try</h3>
+                    <ul>
+                        <li>Dakos — Barley rusk with tomato & olive oil</li>
+                        <li>Lamb tsigariasto — Slow-cooked in clay pot</li>
+                        <li>Mizithra cheese — Local Cretan cheese</li>
+                        <li>Fresh fish — Whatever the boat brought in</li>
+                        <li>Pastitsio — Lasagna-like dish</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3 id="crete-water">Water Activities & Tours</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Catamaran Day Trip</h3>
+                    <p>Half-day or full-day catamaran tours along Crete's coast. Usually includes multiple stops.</p>
+                    <ul>
+                        <li>Balos Lagoon + Gramvoussa Island</li>
+                        <li>Snorkeling stops included</li>
+                        <li>Hotel pickup available</li>
+                        <li>€40-60 per person (half-day)</li>
+                        <li>Book through hotel or GetYourGuide</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Snorkeling Excursions</h3>
+                    <p>Guided snorkeling trips to secluded coves and reefs. Great marine life and clear water.</p>
+                    <ul>
+                        <li>Reef snorkeling tours</li>
+                        <li>Sea turtle spotting (possible)</li>
+                        <li>Equipment rental included</li>
+                        <li>Morning or afternoon options</li>
+                        <li>€35-55 per person</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Boat Tours</h3>
+                    <p>Private or group boat tours to beaches and islands not easily accessible by car.</p>
+                    <ul>
+                        <li>Gramvouska Islands (pirates + history)</li>
+                        <li>Spinalonga Island (fortress ruins)</li>
+                        <li>Mertis Beach (secluded)</li>
+                        <li>Sunset cruises available</li>
+                        <li>Full-day or half-day options</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Scuba Diving</h3>
+                    <p>Professional diving courses and guided dives for certified divers.</p>
+                    <ul>
+                        <li>PADI certification courses</li>
+                        <li>Wreck diving sites</li>
+                        <li>Cave diving (advanced)</li>
+                        <li>Multiple dive centers in Chania</li>
+                        <li>All equipment provided</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3 id="crete-activities">Additional Crete Activities</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Cooking Classes</h3>
+                    <p>Learn traditional Cretan cooking from local chefs. Usually includes market visit + meal.</p>
+                    <ul>
+                        <li>Market tour included</li>
+                        <li>3-4 hour classes</li>
+                        <li>€60-80 per person</li>
+                        <li>Lunch or dinner included</li>
+                        <li>Small group sizes</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Olive Oil Tasting & Tours</h3>
+                    <p>Visit working olive oil estates (like Biolea). Learn production, taste oils, buy locally.</p>
+                    <ul>
+                        <li>Astrikas olive estates</li>
+                        <li>Farm-to-table restaurants</li>
+                        <li>Oil tasting + shopping</li>
+                        <li>Usually half-day trips</li>
+                        <li>€30-50 per person</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Jeep/4x4 Safari Tours</h3>
+                    <p>Off-road adventure to remote villages, waterfalls, and mountain landscapes.</p>
+                    <ul>
+                        <li>Explore White Mountains</li>
+                        <li>Visit hidden villages</li>
+                        <li>Swimming holes + waterfalls</li>
+                        <li>Full-day adventure</li>
+                        <li>€60-80 per person</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Photography Tours</h3>
+                    <p>Guided photography tours with local photographers. Sunrise/sunset shoots.</p>
+                    <ul>
+                        <li>Golden hour shoots</li>
+                        <li>Local secrets & hidden spots</li>
+                        <li>Small groups</li>
+                        <li>Half-day or full-day</li>
+                        <li>Equipment advice included</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Yoga & Wellness</h3>
+                    <p>Beach yoga, meditation, and wellness retreats. Many studios offer drop-in classes.</p>
+                    <ul>
+                        <li>Beachfront yoga studios</li>
+                        <li>Sunset yoga sessions</li>
+                        <li>Meditation classes</li>
+                        <li>€15-25 per class</li>
+                        <li>No experience needed</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Horseback Riding</h3>
+                    <p>Ride through villages, along beaches, through olive groves. Multiple horse ranches nearby.</p>
+                    <ul>
+                        <li>Beach rides available</li>
+                        <li>Mountain trails</li>
+                        <li>Half-day or full-day</li>
+                        <li>€50-80 per person</li>
+                        <li>Beginner-friendly</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Windsurf & Water Sports</h3>
+                    <p>Windsurfing, paddleboarding, kayaking at local beaches. Schools rent equipment.</p>
+                    <ul>
+                        <li>Balos Lagoon (calm water)</li>
+                        <li>Lessons available</li>
+                        <li>Equipment rental hourly</li>
+                        <li>€30-50 per activity</li>
+                        <li>Summer season best</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Rock Climbing & Via Ferrata</h3>
+                    <p>Indoor gyms or outdoor rock climbing. Via ferrata (protected climbing routes) on mountains.</p>
+                    <ul>
+                        <li>Beginner-friendly routes</li>
+                        <li>Mountain views</li>
+                        <li>Full equipment provided</li>
+                        <li>Half or full-day adventures</li>
+                        <li>€60-100 per person</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Kritsa Village — Lace & Crafts</h3>
+                    <p>Traditional hilltop village famous for handmade lace, weaving, and embroidery. Watch artisans at work.</p>
+                    <ul>
+                        <li>Watch lace-making demonstrations</li>
+                        <li>Buy authentic Cretan lace (excellent gifts)</li>
+                        <li>Beautiful mountain village views</li>
+                        <li>Surrounded by olive trees</li>
+                        <li>Easily accessible from Chania</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Minoan Palace of Knossos</h3>
+                    <p>Ancient 1,500-room palace from 7000 BC, central to Minoan civilization. Legendary home of King Minos & the Minotaur.</p>
+                    <ul>
+                        <li>Oldest palace in Europe</li>
+                        <li>Throne Room is stunning</li>
+                        <li>Near Heraklion (30 min from Chania)</li>
+                        <li>Pair with Heraklion Archaeological Museum</li>
+                        <li>Guided tours available</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Spinalonga Island — History & Boat Trip</h3>
+                    <p>Former leper colony island (closed 1957). Important but somber Cretan history. Accessible by boat from Elounda.</p>
+                    <ul>
+                        <li>Venetian fortress ruins</li>
+                        <li>Moving historical significance</li>
+                        <li>Boat tours from Elounda (30 min)</li>
+                        <li>Half-day excursion</li>
+                        <li>Educational & culturally important</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Raki Festivals & Tasting</h3>
+                    <p>Experience authentic Cretan raki (grappa-like spirit). Visit raki festivals, especially October onwards.</p>
+                    <ul>
+                        <li>Kazani Zargianaki raki festival</li>
+                        <li>October-November peak season</li>
+                        <li>Local tasting & celebrations</li>
+                        <li>Learn about Cretan spirits</li>
+                        <li>Authentic local experience</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Wine Tours & Vineyard Tastings</h3>
+                    <p>Crete has rich winemaking history. Visit renowned wineries for tastings & tours of vineyards.</p>
+                    <ul>
+                        <li><strong>Manousakis</strong> — Organic, family-run</li>
+                        <li><strong>Lyrarakis</strong> — Rare grape varieties</li>
+                        <li><strong>Dourakis</strong> — Mountain village winery</li>
+                        <li><strong>Douloufakis</strong> — Local varieties</li>
+                        <li>€15-30 per tasting + wine trail options</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ATHENS SECTION -->
+        <div class="section">
+            <h2 id="athens-things">🏛️ ATHENS — Things to Do</h2>
+            
+            <h3>Historical Sites & Museums</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Acropolis & Parthenon</h3>
+                    <p>The main site. Arrive early (before 10 AM). Visible from Kerameikos area.</p>
+                    <ul>
+                        <li>Parthenon (temple)</li>
+                        <li>Erechtheion</li>
+                        <li>Propylaea gates</li>
+                        <li>Best at sunrise/sunset</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Acropolis Museum</h3>
+                    <p>Modern museum, 3 levels. Amazing views. Glass floor shows archaeological site below.</p>
+                    <ul>
+                        <li>Sculptures & artifacts</li>
+                        <li>Rooftop cafe views</li>
+                        <li>Top-notch modern design</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Ancient Agora</h3>
+                    <p>Ruins, Temple of Hephaestus. Walk through, imagine ancient marketplace.</p>
+                    <ul>
+                        <li>Temple of Hephaestus</li>
+                        <li>Stoa of Attalos</li>
+                        <li>Quieter than Acropolis</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Roman Agora & Tower of Winds</h3>
+                    <p>Smaller ruins, atmospheric. Near Monastiraki.</p>
+                    <ul>
+                        <li>Tower of the Winds</li>
+                        <li>Gate of Athena</li>
+                        <li>Easy walk</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Panathenaic Stadium</h3>
+                    <p>Site of first modern Olympics (1896). Walk the track, museum inside.</p>
+                    <ul>
+                        <li>Original marble stadium</li>
+                        <li>Olympic history</li>
+                        <li>Good views of city</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>National Museum</h3>
+                    <p>Egyptian antiquities, sculptures, art. Larger collection.</p>
+                    <ul>
+                        <li>Cycladic art</li>
+                        <li>Greek sculptures</li>
+                        <li>Extensive collection</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Neighborhoods to Explore</h3>
+            <div class="card" style="background: #fff9f0; border: 2px solid #e8b4a8; margin-bottom: 20px;">
+                <h3 style="color: #d64545;">📍 Athens Neighborhood Walking Tour Guide</h3>
+                <p><strong>Discover Greece's Self-Guided Neighborhood Tours</strong> — A comprehensive guide to downtown Athens exploring three vibrant neighborhoods with specific restaurants, bars, shops, and local tips.</p>
+                <p><a href="https://www.discovergreece.com/travel-ideas/cover-story/neighbourhood-tour-athens" target="_blank" style="color: #3498db; text-decoration: none; font-weight: 600;">→ Read the Full Neighborhood Guide</a></p>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <p style="font-size: 14px; margin: 8px 0;"><strong>🚶 Evripidou St & Surrounds:</strong> Spice stores, Varvakios Market (since 1886), Theatrou Square, traditional tavernas</p>
+                    <p style="font-size: 14px; margin: 8px 0;"><strong>🎨 Psirri:</strong> Hip cool district with Iroon Square, street art, vintage shops, meze restaurants, bars, Little Kook cafe</p>
+                    <p style="font-size: 14px; margin: 8px 0;"><strong>🏢 Commercial Triangle:</strong> Agia Irini Square, Vissis St, trendy shops, concept stores, upscale dining, Karitsi Square nightlife</p>
+                    <p style="font-size: 14px; margin: 8px 0;"><strong>🌟 Bonus:</strong> Omonia Square — Athens' oldest square, currently being revived as the next hotspot</p>
+                </div>
+            </div>
+            
+            <h3>More Athens Neighborhoods</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Kerameikos</h3>
+                    <p>Your neighborhood! Artistic hub, museums, galleries, young vibe, nightlife.</p>
+                    <ul>
+                        <li>Benaki Museum of Islamic Art</li>
+                        <li>Museum of Contemporary Art</li>
+                        <li>Street art & galleries</li>
+                        <li>Trendy restaurants/bars</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Psirri</h3>
+                    <p>Artistic, bohemian. Street art, galleries, trendy cafes, young professionals.</p>
+                    <ul>
+                        <li>Art galleries</li>
+                        <li>Street art murals</li>
+                        <li>Cafe hopping</li>
+                        <li>Nightlife</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Monastiraki</h3>
+                    <p>Historic, bohemian. Street art, live music, cafes, authentic tavernas.</p>
+                    <ul>
+                        <li>Monastiraki Square</li>
+                        <li>Flea market</li>
+                        <li>Live music venues</li>
+                        <li>Historic charm</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Plaka</h3>
+                    <p>Old town charm. Narrow streets, tavernas, tourist-friendly but pretty.</p>
+                    <ul>
+                        <li>Historic streets</li>
+                        <li>Restaurants everywhere</li>
+                        <li>Watch Acropolis light up at night</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Koukaki</h3>
+                    <p>Residential, local vibe. Good cafes, less touristy, real Athens feel.</p>
+                    <ul>
+                        <li>Local shops</li>
+                        <li>Neighborhood cafes</li>
+                        <li>Residential streets</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Nea Chora (Waterfront)</h3>
+                    <p>Seaside village vibe. Beach access, relaxed, good restaurants.</p>
+                    <ul>
+                        <li>Beach walks</li>
+                        <li>Seafood tavernas</li>
+                        <li>Sunset views</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Dining Experiences</h3>
+            <div class="grid">
+                <div class="card">
+                    <h3>Fine Dining (Dress Up!)</h3>
+                    <ul>
+                        <li><strong>CTC Urban Gastronomy</strong> — Michelin-star, Kerameikos</li>
+                        <li><strong>MAKRIS</strong> — Michelin-star, Thissio, ancient artifacts visible</li>
+                        <li><strong>Manu</strong> — Seafood, Greek-Asian fusion, stylish</li>
+                        <li><strong>Hill Athens</strong> — Rooftop, Acropolis views</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Brunch & Casual</h3>
+                    <ul>
+                        <li><strong>Beauty Killed the Beast</strong> — Kerameikos, fusion</li>
+                        <li><strong>Mama Roux</strong> — Brunch, scrambled eggs, pancakes</li>
+                        <li><strong>Ginger Concept</strong> — All-day cafe, Old Town</li>
+                        <li><strong>Nudie Foodie</strong> — Healthy, veggie/vegan</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Traditional & Tavernas</h3>
+                    <ul>
+                        <li><strong>Voliotiko</strong> — Psiri, meze in courtyard, live music</li>
+                        <li><strong>Elvis</strong> — Kerameikos, 4 skewers, locals</li>
+                        <li><strong>Avli</strong> — Psiri, traditional Greek vibes</li>
+                        <li><strong>Diporto</strong> — Omonoia, oldest taverna in Athens</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Casual & Street Food</h3>
+                    <ul>
+                        <li>Souvlaki stands — Kostas or Lefteris o Politis (since 1951)</li>
+                        <li>Local kaffe — Morning coffee rituals</li>
+                        <li>Bougatsa shops — €2 pastry breakfast</li>
+                        <li>Waterfront meze — Ouzo + small plates at sunset</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Day Trip Option</h3>
+            <div class="card">
+                <h3>Aegina Island</h3>
+                <p>Ferry from Piraeus (30 min). Explore island temples, beaches, local pistachios. Return same day.</p>
+                <ul>
+                    <li>Ferry port: Piraeus (20 min from Kerameikos)</li>
+                    <li>Temple of Aphaia</li>
+                    <li>Local pistachio shops</li>
+                    <li>Beach + seafood lunch</li>
+                </ul>
+            </div>
+        </div>
+        
+        
+        <!-- GREEK PHRASES -->
+        <div class="section">
+            <h2 id="greek-phrases">🗣️ Essential Greek Phrases & Pronunciations</h2>
+            
+            <div class="list-2col">
+                <div class="list-section">
+                    <h3 style="margin-top: 0;">Greetings & Basics</h3>
+                    <div class="list-item">
+                        <div class="list-item-title">Kalispéra</div>
+                        <div class="list-item-detail">kah-lee-SPARE-ah | Good evening (say when entering any shop/cafe)</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Kalimera</div>
+                        <div class="list-item-detail">kah-lee-MARE-ah | Good morning</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Adio</div>
+                        <div class="list-item-detail">ah-DEE-oh | Goodbye</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Efharisto</div>
+                        <div class="list-item-detail">ef-hah-ree-STOH | Thank you</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Parakaló</div>
+                        <div class="list-item-detail">pah-rah-kah-LOH | Please</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Ne</div>
+                        <div class="list-item-detail">neh | Yes</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Óhi</div>
+                        <div class="list-item-detail">OH-hee | No</div>
+                    </div>
+                </div>
+                <div class="list-section">
+                    <h3 style="margin-top: 0;">Dining & Food</h3>
+                    <div class="list-item">
+                        <div class="list-item-title">Ti echi kali simera?</div>
+                        <div class="list-item-detail">tee EH-hee kah-LEE see-MARE-ah | What's good today?</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Horta</div>
+                        <div class="list-item-detail">HOR-tah | Vegetables</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Psári</div>
+                        <div class="list-item-detail">psah-REE | Fish</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Kréas</div>
+                        <div class="list-item-detail">KREH-ahs | Meat</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">To logariásmó, parakaló</div>
+                        <div class="list-item-detail">toh loh-gah-ree-AHS-moh | The check, please</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Neró</div>
+                        <div class="list-item-detail">neh-ROH | Water</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Krasi</div>
+                        <div class="list-item-detail">KRAH-see | Wine</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="list-2col">
+                <div class="list-section">
+                    <h3 style="margin-top: 0;">Shopping & Markets</h3>
+                    <div class="list-item">
+                        <div class="list-item-title">Pósso kanei?</div>
+                        <div class="list-item-detail">POH-soh kah-NEE | How much?</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Lígo lígo</div>
+                        <div class="list-item-detail">LEE-goh LEE-goh | A little bit</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Frésco</div>
+                        <div class="list-item-detail">FRES-koh | Fresh</div>
+                    </div>
+                </div>
+                <div class="list-section">
+                    <h3 style="margin-top: 0;">Useful Phrases</h3>
+                    <div class="list-item">
+                        <div class="list-item-title">Kalá</div>
+                        <div class="list-item-detail">kah-LAH | Good</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Stin iyía sas</div>
+                        <div class="list-item-detail">stin ee-YEE-ah sahs | Cheers!</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Milate anglika?</div>
+                        <div class="list-item-detail">mee-LAH-teh ahn-GLEE-kah | Do you speak English?</div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-title">Pou ine to...?</div>
+                        <div class="list-item-detail">poo EE-neh toh | Where is...?</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tip-box">
+                <strong>💡 Using These Phrases</strong>
+                <p>Greeks LOVE when tourists try to speak Greek, even if just a few words. Don't worry about perfect pronunciation — saying "Kalispéra" when entering a shop makes a huge difference. Locals will appreciate the effort and often switch to English if needed. Use these phrases to connect, not to be fluent!</p>
+            </div>
+        </div>
+        
+        <!-- DAY TEMPLATES -->
+        <div class="section">
+            <h2>📅 Daily Schedule Templates</h2>
+            
+            <h3 id="local-day">SAMPLE: A "LIVING LIKE A LOCAL" DAY</h3>
+            <div class="day-template">
+                <div class="day-header">🇬🇷 Local Day (How Greeks Actually Live)</div>
+                
+                <div class="time-slot">
+                    <div class="time">7:00–8:00 AM</div>
+                    <div class="activity">Wake up slowly. Have coffee (freddo espresso or frappe) at home or go to a local kaffe.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">8:00–9:30 AM</div>
+                    <div class="activity">Market time. Visit the weekly laiki agora or neighborhood bakery/cheese shop. Buy fresh produce, bread, cheese. Chat with vendors. Greet shopkeepers.</div>
+                    <div class="activity-detail">This is how Greeks actually shop. Support local. Know the farmer.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">9:30 AM–1:00 PM</div>
+                    <div class="activity">Explore neighborhood slowly. Cafe-hop. Sit at a local kaffe for 1-2 hours. People-watch. No destination. Maybe visit a museum or walk historic streets at your own pace.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">1:30–3:30 PM</div>
+                    <div class="activity">LUNCH — The main meal of the day. Go to a local taverna where Greeks eat (not tourists). Order what locals order. Sit for 1-2 hours. Take your time.</div>
+                    <div class="activity-detail">Ask server: "Ti echi kali simera?" (What's good today?). Try dakos, lamb, fresh fish, horta.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">3:30–7:00 PM</div>
+                    <div class="activity">SIESTA TIME. This isn't laziness — rest, nap, read, swim. Many shops close 2-6 PM. Embrace the pace. Don't feel bad about slow time.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">7:00–8:30 PM</div>
+                    <div class="activity">APERITIVO. Go to a waterfront spot or neighborhood cafe. Order ouzo/wine + meze. Sit outside. Watch sunset. No rush.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">8:30–9:30 PM</div>
+                    <div class="activity">VOLTA (evening walk). Slow walk through town with no destination. See & be seen. This is Greek social time. Chat with locals. Stop at a gelato shop.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">9:30 PM–11:30 PM+</div>
+                    <div class="activity">DINNER. Never before 9 PM. Sit for 2+ hours. Order local wine. Meze or full meal. Arrive late (8-9 PM for better atmosphere). Restaurants are lively after 9 PM.</div>
+                    <div class="activity-detail">Try retsina, local wine. Ask for recommendations. Eat slowly. Enjoy the company.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">Late night</div>
+                    <div class="activity">After dinner, Greeks might go for a nightcap, dessert, or just walk more. You'll be tired — return to your place.</div>
+                </div>
+            </div>
+            
+            <h3 id="tourist-day">SAMPLE: A "TOURIST" DAY</h3>
+            <div class="day-template">
+                <div class="day-header">🏙️ Tourist Day (Classic Sightseeing)</div>
+                
+                <div class="time-slot">
+                    <div class="time">6:30–7:30 AM</div>
+                    <div class="activity">Early wake-up. Quick coffee/breakfast at your hotel or a chain cafe. Fast-moving energy.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">7:30–10:30 AM</div>
+                    <div class="activity">Major historical site (Acropolis, Samaria Gorge, museums). Arrive early to beat crowds. Moving from place to place. Taking photos.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">10:30 AM–12:30 PM</div>
+                    <div class="activity">Continue touring. Another museum or site. Checking off a list. Maybe a guided tour.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">12:30–1:30 PM</div>
+                    <div class="activity">LUNCH — Quick tourist meal. Touristy restaurant with English menus. Eat fast. Prepared food, not fresh that morning.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">1:30–4:00 PM</div>
+                    <div class="activity">Tour more sites. Museum time. Beach time. Shopping. Staying busy. Checking boxes on an itinerary.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">4:00–5:30 PM</div>
+                    <div class="activity">Break for gelato or coffee at a chain cafe. Phone time. Recharge. Maybe rest at hotel.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">5:30–7:00 PM</div>
+                    <div class="activity">Rooftop bar for sunset. Photos for Instagram. Tourist-heavy spot. Designer drinks.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">7:00–8:30 PM</div>
+                    <div class="activity">DINNER — Early (7-8 PM). Tourist restaurant in Plaka or Old Town. English menus everywhere. Food tailored for visitors.</div>
+                </div>
+                
+                <div class="time-slot">
+                    <div class="time">8:30 PM–late</div>
+                    <div class="activity">Nightclub or tourist bar. Or return to hotel to rest. The day is "done."</div>
+                </div>
+            </div>
+            
+            <div class="tip-box">
+                <strong>💡 The Key Difference</strong>
+                <p>Tourist days = checking boxes, rushing, seeing lots, experiencing little. Local days = slow pace, deep connections, fewer "sights" but richer experience. Mix both! But aim for more local days than tourist days. You're in Greece — live the rhythm, not just see the sites.</p>
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <!-- BOOKINGS TAB -->
+    <div class="tab-content" id="bookingsTab">
+        <div class="container">
+            <h1>📋 Trip Bookings</h1>
+            
+            <div class="section">
+                <button class="add-booking-btn" onclick="toggleAddForm()">+ Add New Booking</button>
+                
+                <div class="add-booking-form" id="addBookingForm">
+                    <div class="form-group">
+                        <h3 style="margin-top: 0; color: #2980b9;">Create New Booking</h3>
+                    </div>
+                    <div class="form-group">
+                        <label>Booking Name</label>
+                        <input type="text" id="bookingName" placeholder="e.g., Acropolis Tickets, Catamaran, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label>Check-in / Date</label>
+                        <input type="text" id="bookingCheckin" placeholder="e.g., Sun, Sep 13 at 3:00 PM">
+                    </div>
+                    <div class="form-group">
+                        <label>Check-out (if applicable)</label>
+                        <input type="text" id="bookingCheckout" placeholder="e.g., Thu, Sep 17 at 11:00 AM">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmation #</label>
+                        <input type="text" id="bookingConfirmation" placeholder="e.g., ABC123XYZ">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="bookingPhone" placeholder="e.g., +30 694 3639427">
+                    </div>
+                    <div class="form-group">
+                        <label>Address / Location</label>
+                        <input type="text" id="bookingAddress" placeholder="e.g., Nauárxou Apostóli 22">
+                    </div>
+                    <div class="form-buttons">
+                        <button class="form-btn cancel" onclick="toggleAddForm()">Cancel</button>
+                        <button class="form-btn save" onclick="saveNewBooking()">Save Booking</button>
+                    </div>
+                </div>
+                
+                <div id="bookingsContainer"></div>
+                
+                <div class="tip-box">
+                    <strong>💡 How to Use</strong>
+                    <p>Click on any field to edit it directly. Click "+ Add New Booking" to create new entries for tickets, activities, rentals, etc. All changes are saved automatically to your device.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const CORRECT_PASSWORD = 'bimpeangel2026';
+        
+        function checkPassword() {
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordScreen = document.getElementById('passwordScreen');
+            const errorMsg = document.getElementById('passwordError');
+            
+            if (passwordInput.value === CORRECT_PASSWORD) {
+                passwordScreen.classList.add('hidden');
+                errorMsg.style.display = 'none';
+            } else {
+                errorMsg.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+        
+        // Allow Enter key to submit password
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+        
+        // Focus on password input on load
+        window.addEventListener('load', () => {
+            document.getElementById('passwordInput').focus();
+        });
+        
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            const btn = document.getElementById('menuBtn');
+            
+            if (menu.classList.contains('show')) {
+                menu.classList.remove('show');
+                btn.textContent = '☰ Menu';
+            } else {
+                menu.classList.add('show');
+                btn.textContent = '✕ Close';
+            }
+        }
+        
+        // Close menu when clicking a link
+        const links = document.querySelectorAll('.nav-menu a');
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('navMenu').classList.remove('show');
+                document.getElementById('menuBtn').textContent = '☰ Menu';
+            });
+        });
+        
+        // TAB SWITCHING
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.getElementById('guideTab').classList.remove('active');
+            document.getElementById('bookingsTab').classList.remove('active');
+            
+            // Remove active from all buttons
+            document.getElementById('guideTabBtn').classList.remove('active');
+            document.getElementById('bookingsTabBtn').classList.remove('active');
+            
+            // Show selected tab and mark button as active
+            if (tabName === 'guide') {
+                document.getElementById('guideTab').classList.add('active');
+                document.getElementById('guideTabBtn').classList.add('active');
+            } else if (tabName === 'bookings') {
+                document.getElementById('bookingsTab').classList.add('active');
+                document.getElementById('bookingsTabBtn').classList.add('active');
+                initializeBookings();
+            }
+        }
+        
+        // BOOKINGS MANAGEMENT
+        const defaultBookings = [
+            {
+                id: 1,
+                name: '🏨 Athens Accommodation',
+                checkin: 'Sun, Sep 13 at 3:00 PM',
+                checkout: 'Thu, Sep 17 at 11:00 AM',
+                confirmation: '',
+                phone: '+30 694 3639427',
+                address: 'Nauárxou Apostóli 22'
+            },
+            {
+                id: 2,
+                name: '🏖️ Crete Accommodation',
+                checkin: 'Mon, Sep 9',
+                checkout: 'Fri, Sep 13',
+                confirmation: '',
+                phone: '',
+                address: ''
+            },
+            {
+                id: 3,
+                name: '🚗 Car Rental - Crete',
+                checkin: 'Mon, Sep 9',
+                checkout: 'Fri, Sep 13',
+                confirmation: '',
+                phone: '',
+                address: ''
+            }
+        ];
+        
+        function initializeBookings() {
+            const stored = localStorage.getItem('greeceTripBookings');
+            if (!stored) {
+                localStorage.setItem('greeceTripBookings', JSON.stringify(defaultBookings));
+                renderBookings();
+            } else {
+                renderBookings();
+            }
+        }
+        
+        function getBookings() {
+            const stored = localStorage.getItem('greeceTripBookings');
+            return stored ? JSON.parse(stored) : defaultBookings;
+        }
+        
+        function saveBookings(bookings) {
+            localStorage.setItem('greeceTripBookings', JSON.stringify(bookings));
+            renderBookings();
+        }
+        
+        function renderBookings() {
+            const bookings = getBookings();
+            const container = document.getElementById('bookingsContainer');
+            container.innerHTML = '';
+            
+            bookings.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = 'booking-card';
+                card.innerHTML = `
+                    <div class="booking-card-header">
+                        <h3>${booking.name}</h3>
+                        <button class="delete-btn" onclick="deleteBooking(${booking.id})">Delete</button>
+                    </div>
+                    <div class="booking-field">
+                        <div class="booking-label">Check-in / Date:</div>
+                        <div class="booking-value ${!booking.checkin ? 'empty' : ''}" onclick="editField(${booking.id}, 'checkin')">${booking.checkin || 'Click to add'}</div>
+                    </div>
+                    <div class="booking-field">
+                        <div class="booking-label">Check-out:</div>
+                        <div class="booking-value ${!booking.checkout ? 'empty' : ''}" onclick="editField(${booking.id}, 'checkout')">${booking.checkout || 'Click to add'}</div>
+                    </div>
+                    <div class="booking-field">
+                        <div class="booking-label">Confirmation #:</div>
+                        <div class="booking-value ${!booking.confirmation ? 'empty' : ''}" onclick="editField(${booking.id}, 'confirmation')">${booking.confirmation || 'Click to add'}</div>
+                    </div>
+                    <div class="booking-field">
+                        <div class="booking-label">Phone:</div>
+                        <div class="booking-value ${!booking.phone ? 'empty' : ''}" onclick="editField(${booking.id}, 'phone')">${booking.phone || 'Click to add'}</div>
+                    </div>
+                    <div class="booking-field">
+                        <div class="booking-label">Address:</div>
+                        <div class="booking-value ${!booking.address ? 'empty' : ''}" onclick="editField(${booking.id}, 'address')">${booking.address || 'Click to add'}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function editField(bookingId, fieldName) {
+            const bookings = getBookings();
+            const booking = bookings.find(b => b.id === bookingId);
+            if (!booking) return;
+            
+            const currentValue = booking[fieldName] || '';
+            const newValue = prompt(`Edit ${fieldName}:`, currentValue);
+            
+            if (newValue !== null) {
+                booking[fieldName] = newValue;
+                saveBookings(bookings);
+            }
+        }
+        
+        function deleteBooking(bookingId) {
+            if (confirm('Delete this booking?')) {
+                const bookings = getBookings().filter(b => b.id !== bookingId);
+                saveBookings(bookings);
+            }
+        }
+        
+        function toggleAddForm() {
+            const form = document.getElementById('addBookingForm');
+            form.classList.toggle('show');
+            if (form.classList.contains('show')) {
+                document.getElementById('bookingName').focus();
+            }
+        }
+        
+        function saveNewBooking() {
+            const name = document.getElementById('bookingName').value.trim();
+            const checkin = document.getElementById('bookingCheckin').value.trim();
+            const checkout = document.getElementById('bookingCheckout').value.trim();
+            const confirmation = document.getElementById('bookingConfirmation').value.trim();
+            const phone = document.getElementById('bookingPhone').value.trim();
+            const address = document.getElementById('bookingAddress').value.trim();
+            
+            if (!name) {
+                alert('Please enter a booking name');
+                return;
+            }
+            
+            const bookings = getBookings();
+            const newId = Math.max(...bookings.map(b => b.id), 0) + 1;
+            
+            bookings.push({
+                id: newId,
+                name: name,
+                checkin: checkin,
+                checkout: checkout,
+                confirmation: confirmation,
+                phone: phone,
+                address: address
+            });
+            
+            saveBookings(bookings);
+            
+            // Clear form
+            document.getElementById('bookingName').value = '';
+            document.getElementById('bookingCheckin').value = '';
+            document.getElementById('bookingCheckout').value = '';
+            document.getElementById('bookingConfirmation').value = '';
+            document.getElementById('bookingPhone').value = '';
+            document.getElementById('bookingAddress').value = '';
+            
+            toggleAddForm();
+        }
+    </script>
+</body>
+</html>
