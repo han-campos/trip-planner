@@ -19,7 +19,7 @@ someone who has the passcode opens a static URL and every feature works.
   keys aren't configured. Storage is behind one adapter: `trip/src/storage/storage.js`.
 - **Hosting**: static build output for GitHub Pages (`base: './'`). Build with
   `npm run build` inside `trip/` → `trip/dist`.
-- The original single-file `index.html` is preserved at repo root for reference
+- The original single-file `index.html` is preserved in `docs/original/` for reference
   (content source of truth for the migration); the live app is the React build in `trip/`.
 
 ## Getting started
@@ -98,5 +98,5 @@ Function (no client-side keys):
    confirmations into shared bookings.
 
 ## Repo / branch
-- Work on `haniel-dummy`. Preserve `index.html` (original). Commit clean, focused
+- Work on `haniel-dummy`. Original app preserved in `docs/original/`. Commit clean, focused
   changes. The AI/wardrobe/Gmail work stays OUT of v1 until Haniel greenlights it.

@@ -1,6 +1,6 @@
 # Trip Planner
 
-React/Vite V1 lives in `trip/`. The original single-file `index.html` is preserved at the repo root for review.
+React/Vite V1 lives in `trip/`. The original single-file `index.html` is preserved in `docs/original/` for reference. Design/implementation briefs live in `docs/briefs/`.
 
 ## Friend usage
 
