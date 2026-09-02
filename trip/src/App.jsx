@@ -152,7 +152,7 @@ export default function App() {
         <main className="content-shell">
           {!activeTrip && activeTab !== 'new-trip' && activeTab !== 'trips' && <EmptyTrips onCreate={startCreateTrip} />}
           {activeTrip && activeTab === 'guide' && <TripView trip={activeTrip} mode={guideMode} onMode={setGuideMode} onOpenTab={selectTab} onUpdateTrip={updateTrip} />}
-          {activeTrip && activeTab === 'itinerary' && <ItineraryView trip={activeTrip} />}
+          {activeTrip && activeTab === 'itinerary' && <ItineraryView trip={activeTrip} onUpdateTrip={updateTrip} />}
           {activeTrip && activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
           {activeTrip && activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
           {activeTab === 'trips' && <TripsPage trips={filteredTrips} allTripsCount={trips.length} activeTrip={activeTrip} query={tripSearch} onQuery={setTripSearch} onChoose={chooseTrip} onCreate={startCreateTrip} onDelete={deleteActiveTrip} />}
