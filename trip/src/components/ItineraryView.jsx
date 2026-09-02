@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Car, Check, Clock, ExternalLink, Footprints, MapPin } from 'lucide-react';
+import { Car, Check, Clock, ExternalLink, Footprints, MapPin, Upload } from 'lucide-react';
 import { itineraryFor } from '../data/itineraries.js';
+import ImportItinerary from './ImportItinerary.jsx';
 import { CategoryIcon, categoryTone, iconStroke } from './uiIcons.jsx';
 
 const choiceKey = (tripId) => `trip-planner:v1:itinerary-choice:${tripId}`;
@@ -19,11 +20,35 @@ function readChoices(tripId) {
   }
 }
 
-export default function ItineraryView({ trip }) {
+export default function ItineraryView({ trip, onUpdateTrip }) {
   const itinerary = itineraryFor(trip);
   const legs = useMemo(() => normalizeLegs(itinerary), [itinerary]);
   const [choices, setChoices] = useState({});
   const [activeLeg, setActiveLeg] = useState('all');
+  const [importing, setImporting] = useState(false);
+  const canImport = Boolean(onUpdateTrip);
+  const hasCustom = Boolean(trip?.itinerary);
+
+  async function saveItinerary(next) {
+    await onUpdateTrip({ ...trip, itinerary: next });
+    setActiveLeg('all');
+  }
+
+  async function resetItinerary() {
+    const { itinerary: _dropped, ...rest } = trip;
+    await onUpdateTrip(rest);
+    setActiveLeg('all');
+  }
+
+  const importSheet = importing && canImport ? (
+    <ImportItinerary
+      trip={trip}
+      hasCustom={hasCustom}
+      onSave={saveItinerary}
+      onReset={resetItinerary}
+      onClose={() => setImporting(false)}
+    />
+  ) : null;
 
   useEffect(() => {
     if (trip) setChoices(readChoices(trip.id));
@@ -46,8 +71,15 @@ export default function ItineraryView({ trip }) {
       <article className="page itinerary-page">
         <section className="page empty-state">
           <h2>No itinerary yet</h2>
-          <p>This trip doesn’t have a proposed day-by-day plan. The Guide tab has the places and day templates.</p>
+          <p>This trip doesn’t have a proposed day-by-day plan. Import one from a chat assistant, or use the Guide tab for places and day templates.</p>
+          {canImport && (
+            <button className="button button--primary" type="button" onClick={() => setImporting(true)}>
+              <Upload size={18} strokeWidth={iconStroke} aria-hidden="true" />
+              Import itinerary
+            </button>
+          )}
         </section>
+        {importSheet}
       </article>
     );
   }
@@ -58,7 +90,15 @@ export default function ItineraryView({ trip }) {
   return (
     <article className="page itinerary-page">
       <header className="hero-card">
-        <h1>{itinerary.title}</h1>
+        <div className="itin-hero__title-row">
+          <h1>{itinerary.title}</h1>
+          {canImport && (
+            <button className="button button--secondary itin-import-button" type="button" onClick={() => setImporting(true)}>
+              <Upload size={16} strokeWidth={iconStroke} aria-hidden="true" />
+              Import
+            </button>
+          )}
+        </div>
         <p>{itinerary.subtitle}</p>
         <div className="hero-meta">
           <span><MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />{legs.map((leg) => leg.label).join(' → ')}</span>
@@ -108,6 +148,10 @@ export default function ItineraryView({ trip }) {
           <p>{itinerary.tip.body}</p>
         </div>
       )}
+
+      {hasCustom && <p className="itin-source">Imported itinerary. “Import” replaces it; reset from there to return to the built-in plan.</p>}
+
+      {importSheet}
     </article>
   );
 }
@@ -169,6 +213,12 @@ function DayBlock({ day, choice, onChoose }) {
 
         {day.drives && <TravelTable title={day.travelTitle} legs={day.drives} />}
 
+        {day.notes?.length > 0 && (
+          <ul className="itin-list itin-list--notes">
+            {day.notes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+        )}
+
         {day.lean && <p className="itin-lean">{day.lean}</p>}
 
         {isOptionDay && (
@@ -221,6 +271,12 @@ function OptionCard({ option, selected, dimmed, onChoose }) {
       </ul>
 
       <TravelTable title={option.travelTitle} legs={option.drives} />
+
+      {option.notes?.length > 0 && (
+        <ul className="itin-list itin-list--notes">
+          {option.notes.map((note) => <li key={note}>{note}</li>)}
+        </ul>
+      )}
 
       {option.bestFor && <p className="itin-bestfor"><strong>Best for:</strong> {option.bestFor}</p>}
 
