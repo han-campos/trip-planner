@@ -6,6 +6,7 @@ import { createTripStorage, makeId } from './storage/storage.js';
 import PasswordGate from './components/PasswordGate.jsx';
 import TabBar from './components/TabBar.jsx';
 import TripView from './components/TripView.jsx';
+import ItineraryView from './components/ItineraryView.jsx';
 import PhraseDeck from './components/PhraseDeck.jsx';
 import BookingsView from './components/BookingsView.jsx';
 import AddTripWizard from './components/AddTripWizard.jsx';
@@ -13,6 +14,7 @@ import { iconStroke } from './components/uiIcons.jsx';
 
 const tabs = [
   { id: 'guide', label: 'Guide' },
+  { id: 'itinerary', label: 'Itinerary' },
   { id: 'phrases', label: 'Phrases' },
   { id: 'bookings', label: 'Bookings' },
   { id: 'trips', label: 'Trips' },
@@ -150,6 +152,7 @@ export default function App() {
         <main className="content-shell">
           {!activeTrip && activeTab !== 'new-trip' && activeTab !== 'trips' && <EmptyTrips onCreate={startCreateTrip} />}
           {activeTrip && activeTab === 'guide' && <TripView trip={activeTrip} mode={guideMode} onMode={setGuideMode} onOpenTab={selectTab} onUpdateTrip={updateTrip} />}
+          {activeTrip && activeTab === 'itinerary' && <ItineraryView trip={activeTrip} />}
           {activeTrip && activeTab === 'phrases' && <PhraseDeck deck={activeTrip.phraseDeck} />}
           {activeTrip && activeTab === 'bookings' && <BookingsView trip={activeTrip} storage={storage} />}
           {activeTab === 'trips' && <TripsPage trips={filteredTrips} allTripsCount={trips.length} activeTrip={activeTrip} query={tripSearch} onQuery={setTripSearch} onChoose={chooseTrip} onCreate={startCreateTrip} onDelete={deleteActiveTrip} />}

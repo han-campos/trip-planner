@@ -36,6 +36,7 @@ function PhrasesTabIcon({ size = 24, strokeWidth = iconStroke, ...props }) {
 
 export const tabIcons = {
   guide: Compass,
+  itinerary: CalendarDays,
   phrases: PhrasesTabIcon,
   bookings: CalendarCheck,
   trips: Map,
