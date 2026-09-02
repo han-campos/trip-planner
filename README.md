@@ -26,7 +26,26 @@ npm run dev
 npm run build
 ```
 
-`npm run build` writes a static bundle to `trip/dist` with `base: './'`, suitable for GitHub Pages.
+`npm run build` writes a static bundle to `trip/dist` with `base: './'`.
+
+### Publishing to GitHub Pages
+
+Pages serves this repo with **Deploy from a branch → `main` → `/ (root)`**, so the
+*built* app is committed at the repo root (`index.html` + `assets/`). `trip/` stays
+the source of truth; the root files are generated output.
+
+After changing anything under `trip/src/`, regenerate and commit the root build:
+
+```bash
+./scripts/build-pages.sh
+git add index.html assets .nojekyll
+git commit -m "Rebuild Pages bundle"
+```
+
+Skipping that step means the live site keeps serving the previous build, even
+though the source in `trip/` is up to date. Note `trip/index.html` is a Vite
+source file that loads `/src/main.jsx` — it is not servable on its own, which is
+why the root copy has to come from a build.
 
 ## Configuration
 
