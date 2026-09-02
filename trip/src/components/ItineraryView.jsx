@@ -1,34 +1,47 @@
-import { useEffect, useState } from 'react';
-import { Car, Check, Clock, ExternalLink, MapPin } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Car, Check, Clock, ExternalLink, Footprints, MapPin } from 'lucide-react';
 import { itineraryFor } from '../data/itineraries.js';
 import { CategoryIcon, categoryTone, iconStroke } from './uiIcons.jsx';
 
 const choiceKey = (tripId) => `trip-planner:v1:itinerary-choice:${tripId}`;
 
+// Choices are a { [dayId]: optionId } map. Older builds stored a bare option id
+// for the single Crete options day, so migrate that shape on read.
+function readChoices(tripId) {
+  try {
+    const raw = localStorage.getItem(choiceKey(tripId));
+    if (!raw) return {};
+    if (!raw.startsWith('{')) return { 'sep-12': raw };
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function ItineraryView({ trip }) {
   const itinerary = itineraryFor(trip);
-  const optionDay = itinerary?.days.find((day) => day.options?.length);
-  const [choice, setChoice] = useState(null);
+  const legs = useMemo(() => normalizeLegs(itinerary), [itinerary]);
+  const [choices, setChoices] = useState({});
+  const [activeLeg, setActiveLeg] = useState('all');
 
   useEffect(() => {
-    if (!trip) return;
-    try {
-      setChoice(localStorage.getItem(choiceKey(trip.id)));
-    } catch {
-      setChoice(null);
-    }
+    if (trip) setChoices(readChoices(trip.id));
   }, [trip?.id]);
 
-  function chooseOption(optionId) {
-    const next = choice === optionId ? null : optionId;
-    setChoice(next);
-    try {
-      if (next) localStorage.setItem(choiceKey(trip.id), next);
-      else localStorage.removeItem(choiceKey(trip.id));
-    } catch { /* ignore */ }
+  function chooseOption(dayId, optionId) {
+    setChoices((current) => {
+      const next = { ...current };
+      if (next[dayId] === optionId) delete next[dayId];
+      else next[dayId] = optionId;
+      try {
+        localStorage.setItem(choiceKey(trip.id), JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
   }
 
-  if (!itinerary) {
+  if (!itinerary || legs.length === 0) {
     return (
       <article className="page itinerary-page">
         <section className="page empty-state">
@@ -39,7 +52,8 @@ export default function ItineraryView({ trip }) {
     );
   }
 
-  const selected = optionDay?.options.find((option) => option.id === choice) || null;
+  const shownLegs = activeLeg === 'all' ? legs : legs.filter((leg) => leg.id === activeLeg);
+  const totalDays = legs.reduce((count, leg) => count + leg.days.length, 0);
 
   return (
     <article className="page itinerary-page">
@@ -47,33 +61,46 @@ export default function ItineraryView({ trip }) {
         <h1>{itinerary.title}</h1>
         <p>{itinerary.subtitle}</p>
         <div className="hero-meta">
-          <span><MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />{itinerary.base}</span>
-          <span><Clock size={16} strokeWidth={iconStroke} aria-hidden="true" />{itinerary.days.length} days</span>
+          <span><MapPin size={16} strokeWidth={iconStroke} aria-hidden="true" />{legs.map((leg) => leg.label).join(' → ')}</span>
+          <span><Clock size={16} strokeWidth={iconStroke} aria-hidden="true" />{totalDays} days</span>
         </div>
-        <ol className="route-strip" aria-label="Route summary">
-          {itinerary.days.map((day) => {
-            const isOptionDay = Boolean(day.options?.length);
-            const label = isOptionDay ? (selected?.label || 'Pick one') : day.title;
-            return (
-              <li key={day.id} className={`route-strip__step ${isOptionDay ? 'is-choice' : ''} ${isOptionDay && !selected ? 'is-unset' : ''}`}>
-                <span className="route-strip__date">{day.date.replace(/^\w+ /, '')}</span>
-                <span className="route-strip__label">{label}</span>
-              </li>
-            );
-          })}
-        </ol>
+        {legs.map((leg) => (
+          <RouteStrip key={leg.id} leg={leg} choices={choices} showLabel={legs.length > 1} />
+        ))}
       </header>
 
-      <div className="itinerary-timeline">
-        {itinerary.days.map((day) => (
-          <DayBlock
-            key={day.id}
-            day={day}
-            choice={choice}
-            onChoose={chooseOption}
-          />
-        ))}
-      </div>
+      {legs.length > 1 && (
+        <div className="city-filter itinerary-legs" role="tablist" aria-label="Filter by leg">
+          <button type="button" role="tab" aria-selected={activeLeg === 'all'} className={activeLeg === 'all' ? 'active' : ''} onClick={() => setActiveLeg('all')}>
+            Whole trip
+          </button>
+          {legs.map((leg) => (
+            <button key={leg.id} type="button" role="tab" aria-selected={activeLeg === leg.id} className={activeLeg === leg.id ? 'active' : ''} onClick={() => setActiveLeg(leg.id)}>
+              {leg.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {shownLegs.map((leg) => (
+        <section className="itin-leg" key={leg.id}>
+          {(leg.title || leg.note) && (
+            <div className="itin-leg__header">
+              {leg.title && <h2>{leg.title}</h2>}
+              {leg.base && <p className="itin-leg__base"><MapPin size={14} strokeWidth={iconStroke} aria-hidden="true" />{leg.base}</p>}
+              {leg.note && <p className="itin-leg__note">{leg.note}</p>}
+            </div>
+          )}
+
+          <div className="itinerary-timeline">
+            {leg.days.map((day) => (
+              <DayBlock key={day.id} day={day} choice={choices[day.id]} onChoose={(optionId) => chooseOption(day.id, optionId)} />
+            ))}
+          </div>
+
+          {leg.pool && <WorkshopPool pool={leg.pool} />}
+        </section>
+      ))}
 
       {itinerary.tip && (
         <div className="tip-box">
@@ -82,6 +109,26 @@ export default function ItineraryView({ trip }) {
         </div>
       )}
     </article>
+  );
+}
+
+function RouteStrip({ leg, choices, showLabel }) {
+  return (
+    <div className="route-strip-block">
+      {showLabel && <span className="route-strip__leg">{leg.label}</span>}
+      <ol className="route-strip" aria-label={`${leg.label} route summary`}>
+        {leg.days.map((day) => {
+          const isChoice = Boolean(day.options?.length);
+          const picked = isChoice ? day.options.find((option) => option.id === choices[day.id]) : null;
+          return (
+            <li key={day.id} className={`route-strip__step ${isChoice ? 'is-choice' : ''} ${isChoice && !picked ? 'is-unset' : ''}`}>
+              <span className="route-strip__date">{day.date.replace(/^\w+ /, '')}</span>
+              <span className="route-strip__label">{isChoice ? (picked?.label || 'Pick one') : day.title}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -99,7 +146,8 @@ function DayBlock({ day, choice, onChoose }) {
       <div className="itin-day__body">
         <div className="itin-day__header">
           <span className="itin-day__date">{day.date}</span>
-          <h2>{day.title}</h2>
+          <h3>{day.title}</h3>
+          {day.pace && <span className={`itin-pace itin-pace--${day.paceTone || 'easy'}`}>{day.pace}</span>}
           {isOptionDay && <span className="itin-choice-chip">{day.options.length} options</span>}
         </div>
         <p className="itin-day__summary">{day.summary}</p>
@@ -110,7 +158,18 @@ function DayBlock({ day, choice, onChoose }) {
           </ul>
         )}
 
-        {day.drives && <DriveTable drives={day.drives} />}
+        {day.blocks?.map((block) => (
+          <div className="itin-block" key={block.label}>
+            <div className="itin-block__label">{block.label}</div>
+            <ul className="itin-list">
+              {block.items.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+        ))}
+
+        {day.drives && <TravelTable title={day.travelTitle} legs={day.drives} />}
+
+        {day.lean && <p className="itin-lean">{day.lean}</p>}
 
         {isOptionDay && (
           <div className="itin-options" role="radiogroup" aria-label={`${day.date} options`}>
@@ -161,7 +220,9 @@ function OptionCard({ option, selected, dimmed, onChoose }) {
         {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
       </ul>
 
-      <DriveTable drives={option.drives} />
+      <TravelTable title={option.travelTitle} legs={option.drives} />
+
+      {option.bestFor && <p className="itin-bestfor"><strong>Best for:</strong> {option.bestFor}</p>}
 
       {option.link && (
         <a className="itin-option__link" href={option.link.url} target="_blank" rel="noreferrer">
@@ -173,15 +234,16 @@ function OptionCard({ option, selected, dimmed, onChoose }) {
   );
 }
 
-function DriveTable({ drives }) {
-  if (!drives?.length) return null;
+function TravelTable({ title = 'Driving', legs }) {
+  if (!legs?.length) return null;
+  const Icon = title === 'Driving' ? Car : Footprints;
   return (
     <div className="itin-drives">
       <div className="itin-drives__title">
-        <Car size={14} strokeWidth={iconStroke} aria-hidden="true" />
-        Driving
+        <Icon size={14} strokeWidth={iconStroke} aria-hidden="true" />
+        {title}
       </div>
-      {drives.map((leg) => (
+      {legs.map((leg) => (
         <div className="itin-drive" key={`${leg.from}-${leg.to}`}>
           <div className="itin-drive__route">
             <span>{leg.from}</span>
@@ -197,4 +259,36 @@ function DriveTable({ drives }) {
       ))}
     </div>
   );
+}
+
+function WorkshopPool({ pool }) {
+  return (
+    <section className="itin-pool">
+      <div className="itin-pool__header">
+        <h3>{pool.title}</h3>
+        <p>{pool.note}</p>
+      </div>
+      <div className="itin-pool__grid">
+        {pool.items.map((item) => (
+          <a className="itin-pool__item" key={item.url} href={item.url} target="_blank" rel="noreferrer">
+            <span className="itin-pool__label">
+              <strong>{item.label}</strong>
+              {item.note && <small>{item.note}</small>}
+            </span>
+            <ExternalLink size={14} strokeWidth={iconStroke} aria-hidden="true" />
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Older itineraries are a flat day list; wrap them so both shapes render.
+function normalizeLegs(itinerary) {
+  if (!itinerary) return [];
+  if (itinerary.legs?.length) return itinerary.legs;
+  if (itinerary.days?.length) {
+    return [{ id: 'trip', label: 'Trip', title: '', base: itinerary.base, days: itinerary.days }];
+  }
+  return [];
 }
